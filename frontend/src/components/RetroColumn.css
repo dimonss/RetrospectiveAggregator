@@ -1,0 +1,105 @@
+.retro-column {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-glass);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  min-width: 300px;
+  max-width: 340px;
+  flex: 1;
+  overflow: hidden;
+  transition: all var(--transition-base);
+  position: relative;
+}
+
+.retro-column--over {
+  border-color: var(--col-color);
+  box-shadow: 0 0 0 2px rgba(124,58,237,0.2), inset 0 0 30px rgba(124,58,237,0.05);
+}
+
+.column-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-lg);
+  gap: var(--space-sm);
+}
+
+.column-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  min-width: 0;
+}
+
+.column-emoji {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.column-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.column-count {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 6px;
+  border-radius: var(--radius-full);
+  background: rgba(255,255,255,0.08);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.column-accent-bar {
+  height: 3px;
+  margin: 0 var(--space-lg);
+  border-radius: var(--radius-full);
+  opacity: 0.7;
+  margin-bottom: var(--space-md);
+}
+
+.column-cards {
+  flex: 1;
+  padding: 0 var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  overflow-y: auto;
+  min-height: 200px;
+  max-height: calc(100vh - 340px);
+  padding-bottom: var(--space-md);
+}
+
+.column-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: var(--space-2xl) var(--space-lg);
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.column-empty span {
+  font-size: 32px;
+  opacity: 0.3;
+}
+
+.column-footer {
+  padding: var(--space-md);
+  border-top: 1px solid var(--border-subtle);
+  margin-top: auto;
+}

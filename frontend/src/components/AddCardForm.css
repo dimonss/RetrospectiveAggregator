@@ -1,0 +1,68 @@
+.add-card-trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px var(--space-md);
+  border-radius: var(--radius-md);
+  background: transparent;
+  border: 1px dashed var(--border-medium);
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.add-card-trigger:hover {
+  background: var(--bg-glass);
+  border-color: var(--col-color, var(--accent-primary));
+  color: var(--col-color, var(--accent-secondary));
+  transform: translateY(-1px);
+}
+
+.add-card-form {
+  background: var(--bg-elevated);
+  border: 1px solid var(--col-color, var(--accent-primary));
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  box-shadow: 0 0 20px rgba(124, 58, 237, 0.15);
+  animation: scaleIn var(--transition-fast) forwards;
+}
+
+.add-card-textarea {
+  width: 100%;
+  background: var(--bg-glass);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: var(--space-sm) var(--space-md);
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.5;
+  resize: none;
+  font-family: var(--font-sans);
+  transition: border-color var(--transition-fast);
+}
+
+.add-card-textarea:focus {
+  outline: none;
+  border-color: var(--col-color, var(--accent-primary));
+}
+
+.add-card-textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.add-card-form-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.add-card-form-btns {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
