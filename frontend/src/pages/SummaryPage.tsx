@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Check, Copy, ArrowLeft, CheckSquare } from 'lucide-react';
 import { MOCK_ROOM, MOCK_USERS, type ActionItem } from '../mocks/data';
+import ThemeToggle from '../components/ThemeToggle';
 import './SummaryPage.css';
 
 // Build a demo summary with action items from mock data
@@ -86,14 +87,17 @@ export default function SummaryPage() {
             <p className="summary-subtitle">{room.name}</p>
           </div>
         </div>
-        <button
-          id="btn-copy-summary"
-          className="btn-primary"
-          onClick={handleCopy}
-        >
-          {copied ? <Check size={16} /> : <Copy size={16} />}
-          {copied ? 'Скопировано!' : 'Скопировать для Telegram/Slack'}
-        </button>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <ThemeToggle />
+          <button
+            id="btn-copy-summary"
+            className="btn-primary"
+            onClick={handleCopy}
+          >
+            {copied ? <Check size={16} /> : <Copy size={16} />}
+            {copied ? 'Скопировано!' : 'Скопировать для Telegram/Slack'}
+          </button>
+        </div>
       </header>
 
       <main className="summary-main">

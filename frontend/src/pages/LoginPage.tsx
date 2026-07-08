@@ -2,6 +2,7 @@ import { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../App';
 import { CURRENT_USER } from '../mocks/data';
+import ThemeToggle from '../components/ThemeToggle';
 import './LoginPage.css';
 
 export default function LoginPage() {
@@ -22,6 +23,11 @@ export default function LoginPage() {
 
   return (
     <div className="login-page">
+      {/* Theme Toggle */}
+      <div className="login-theme-toggle">
+        <ThemeToggle />
+      </div>
+
       {/* Animated blobs */}
       <div className="blob blob-1" />
       <div className="blob blob-2" />

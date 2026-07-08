@@ -4,6 +4,7 @@ import { Plus, Users, Clock, ChevronRight, LogOut, Zap } from 'lucide-react';
 import { AuthContext } from '../App';
 import { MOCK_DASHBOARD_ROOMS, type TemplateId } from '../mocks/data';
 import TemplateModal from '../components/TemplateModal';
+import ThemeToggle from '../components/ThemeToggle';
 import './DashboardPage.css';
 
 const STAGE_LABELS: Record<string, { label: string; color: string }> = {
@@ -54,9 +55,10 @@ export default function DashboardPage() {
             />
             <span className="user-name">{user?.name}</span>
           </div>
+          <ThemeToggle />
           <button
             id="btn-logout"
-            className="btn-icon"
+            className="btn-icon tooltip-bottom"
             onClick={logout}
             data-tooltip="Выйти"
           >

@@ -162,13 +162,13 @@
 .auth-btn-google {
   background: #fff;
   color: #1f1f1f;
-  border-color: rgba(255,255,255,0.3);
+  border-color: var(--border-strong);
 }
 
 .auth-btn-google:hover {
   background: #f5f5f5;
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(255, 255, 255, 0.15);
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.1);
 }
 
 .auth-btn-telegram {
@@ -212,4 +212,11 @@
 .login-social-text {
   font-size: 13px;
   color: var(--text-muted);
+}
+
+.login-theme-toggle {
+  position: absolute;
+  top: var(--space-lg);
+  right: var(--space-lg);
+  z-index: 10;
 }

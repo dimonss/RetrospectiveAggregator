@@ -25,6 +25,7 @@ import {
 import StageIndicator from '../components/StageIndicator';
 import RetroColumn from '../components/RetroColumn';
 import RetroCardComponent from '../components/RetroCard';
+import ThemeToggle from '../components/ThemeToggle';
 import './RetroPage.css';
 
 const STAGE_ORDER: Stage[] = ['brainstorming', 'grouping', 'voting', 'discussion'];
@@ -228,7 +229,7 @@ export default function RetroPage() {
           {room.stage === 'brainstorming' && (
             <button
               id="btn-anon-toggle"
-              className={`anon-toggle ${room.anonymousMode ? 'anon-toggle--on' : ''}`}
+              className={`anon-toggle tooltip-bottom ${room.anonymousMode ? 'anon-toggle--on' : ''}`}
               onClick={handleAnonymousToggle}
               data-tooltip={room.anonymousMode ? 'Анонимно: вкл' : 'Анонимно: выкл'}
             >
@@ -251,6 +252,9 @@ export default function RetroPage() {
               <span className="votes-counter-text">{votesLeft} из {MAX_VOTES} голосов</span>
             </div>
           )}
+
+          {/* Theme Toggle */}
+          <ThemeToggle />
 
           {/* Share */}
           <button

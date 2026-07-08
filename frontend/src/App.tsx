@@ -12,20 +12,34 @@ export const AuthContext = React.createContext<{
   logout: () => void;
 }>({ user: null, login: () => {}, logout: () => {} });
 
+export const ThemeContext = React.createContext<{
+  theme: 'dark' | 'light';
+  toggleTheme: () => void;
+}>({ theme: 'dark', toggleTheme: () => {} });
+
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+
+  const toggleTheme = () => {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    document.documentElement.setAttribute('data-theme', next);
+  };
 
   return (
-    <AuthContext.Provider value={{ user, login: setUser, logout: () => setUser(null) }}>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <LoginPage />} />
-          <Route path="/dashboard" element={user ? <DashboardPage /> : <Navigate to="/" replace />} />
-          <Route path="/retro/:id" element={user ? <RetroPage /> : <Navigate to="/" replace />} />
-          <Route path="/retro/:id/summary" element={user ? <SummaryPage /> : <Navigate to="/" replace />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </BrowserRouter>
-    </AuthContext.Provider>
+    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+      <AuthContext.Provider value={{ user, login: setUser, logout: () => setUser(null) }}>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <LoginPage />} />
+            <Route path="/dashboard" element={user ? <DashboardPage /> : <Navigate to="/" replace />} />
+            <Route path="/retro/:id" element={user ? <RetroPage /> : <Navigate to="/" replace />} />
+            <Route path="/retro/:id/summary" element={user ? <SummaryPage /> : <Navigate to="/" replace />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthContext.Provider>
+    </ThemeContext.Provider>
   );
 }
