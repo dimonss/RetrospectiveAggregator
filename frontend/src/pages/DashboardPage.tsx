@@ -1,7 +1,7 @@
 import { useContext, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Users, Clock, ChevronRight, LogOut, Zap } from 'lucide-react';
-import { AuthContext } from '../App';
+import { AuthContext, DemoContext } from '../App';
 import { MOCK_DASHBOARD_ROOMS, type TemplateId } from '../mocks/data';
 import TemplateModal from '../components/TemplateModal';
 import ThemeToggle from '../components/ThemeToggle';
@@ -32,6 +32,7 @@ function timeAgo(dateStr: string) {
 
 export default function DashboardPage() {
   const { user, logout } = useContext(AuthContext);
+  const { isDemoMode } = useContext(DemoContext);
   const navigate = useNavigate();
   const [showTemplateModal, setShowTemplateModal] = useState(false);
 
@@ -54,6 +55,7 @@ export default function DashboardPage() {
               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
             />
             <span className="user-name">{user?.name}</span>
+            {isDemoMode && <span className="badge badge-yellow" style={{ fontSize: '10px', padding: '1px 6px' }}>DEMO</span>}
           </div>
           <ThemeToggle />
           <button

@@ -220,3 +220,84 @@
   right: var(--space-lg);
   z-index: 10;
 }
+
+/* ── Demo Toggle ─────────────────────────────────────────────────────────────── */
+.demo-toggle-container {
+  padding: var(--space-md);
+  background: var(--bg-glass);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-xs);
+}
+
+.demo-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.demo-toggle-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.demo-toggle-icon {
+  font-size: 18px;
+}
+
+.demo-toggle-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.demo-toggle-switch {
+  position: relative;
+  width: 48px;
+  height: 26px;
+  border-radius: var(--radius-full);
+  background: var(--border-medium);
+  border: none;
+  cursor: pointer;
+  transition: background var(--transition-base);
+  padding: 0;
+}
+
+.demo-toggle-switch.active {
+  background: var(--accent-primary);
+}
+
+.demo-toggle-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform var(--transition-base);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.demo-toggle-switch.active .demo-toggle-thumb {
+  transform: translateX(22px);
+}
+
+.demo-toggle-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: var(--space-xs);
+  line-height: 1.4;
+}
+
+.login-error {
+  padding: var(--space-sm) var(--space-md);
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: var(--radius-sm);
+  color: var(--error);
+  font-size: 13px;
+  text-align: center;
+}
+
