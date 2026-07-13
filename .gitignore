@@ -35,3 +35,11 @@ lerna-debug.log*
 **/bin/
 **/out/
 **/obj/
+
+# SQLite database files and dynamic data
+**/data/
+**/*.db
+**/*.db-journal
+**/*.db-shm
+**/*.db-wal
+

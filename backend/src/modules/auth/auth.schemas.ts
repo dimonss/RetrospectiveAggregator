@@ -53,6 +53,6 @@ export const userProfileResponseSchema = z.object({
     lastName: z.string().nullable(),
     username: z.string().nullable(),
     photoUrl: z.string().nullable(),
-    createdAt: z.string(),
-    updatedAt: z.string(),
+    createdAt: z.string().nullable(),
+    updatedAt: z.string().nullable(),
 });

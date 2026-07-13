@@ -133,6 +133,7 @@ export async function authRoutes(app: FastifyInstance) {
                 body: refreshTokenSchema,
                 response: {
                     200: messageResponseSchema,
+                    400: messageResponseSchema,
                 },
             },
         },
