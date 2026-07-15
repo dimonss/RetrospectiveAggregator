@@ -93,7 +93,7 @@ export default function App() {
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
       <DemoContext.Provider value={{ isDemoMode, toggleDemoMode }}>
         <AuthContext.Provider value={{ user, login: setUser, logout: handleLogout }}>
-          <BrowserRouter>
+          <BrowserRouter basename={import.meta.env.BASE_URL}>
             <Routes>
               <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <LoginPage />} />
               <Route path="/dashboard" element={user ? <DashboardPage /> : <Navigate to="/" replace />} />

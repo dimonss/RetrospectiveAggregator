@@ -1,4 +1,6 @@
-const API_BASE = '/api';
+const API_BASE = import.meta.env.BASE_URL.endsWith('/')
+    ? `${import.meta.env.BASE_URL.slice(0, -1)}/api`
+    : `${import.meta.env.BASE_URL}api`;
 
 function getTokens() {
     return {

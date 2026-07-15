@@ -301,3 +301,20 @@
   text-align: center;
 }
 
+.login-real-buttons-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-md);
+  margin-top: var(--space-md);
+  width: 100%;
+}
+
+.real-auth-btn-wrap {
+  width: 320px;
+  display: flex;
+  justify-content: center;
+  min-height: 40px;
+}
+
+
