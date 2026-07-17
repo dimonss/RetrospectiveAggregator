@@ -86,6 +86,27 @@ export async function logout(refreshToken: string): Promise<void> {
     }
 }
 
+export async function verifyTokenWithChalyshAuth(token: string): Promise<typeof userProfiles.$inferSelect> {
+    const env = getEnv();
+    const url = `${env.AUTH_SERVICE_URL}/user/me`;
+
+    const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+    });
+
+    if (!response.ok) {
+        throw new Error('Invalid token');
+    }
+
+    const authUser = await response.json() as ChalyshAuthUser;
+    const localUser = await upsertUserProfile(authUser);
+    return localUser;
+}
+
 export async function getUserProfile(authUserId: string) {
     const db = getDb();
 
@@ -98,7 +119,7 @@ export async function getUserProfile(authUserId: string) {
     return profile || null;
 }
 
-async function upsertUserProfile(authUser: ChalyshAuthUser) {
+export async function upsertUserProfile(authUser: ChalyshAuthUser) {
     const db = getDb();
 
     const existing = db
@@ -143,3 +164,4 @@ async function upsertUserProfile(authUser: ChalyshAuthUser) {
 
     return created!;
 }
+

@@ -7,6 +7,7 @@ import corsPlugin from './plugins/cors.plugin.js';
 import jwtPlugin from './plugins/jwt.plugin.js';
 import swaggerPlugin from './plugins/swagger.plugin.js';
 import { authRoutes } from './modules/auth/auth.routes.js';
+import { roomsRoutes } from './modules/rooms/rooms.routes.js';
 
 export async function buildApp() {
     const app = Fastify({
@@ -45,6 +46,7 @@ export async function buildApp() {
     // Routes under /api prefix
     await app.register(async (prefixed) => {
         await prefixed.register(authRoutes);
+        await prefixed.register(roomsRoutes);
 
         // Health check
         prefixed.get('/health', {
@@ -56,3 +58,4 @@ export async function buildApp() {
 
     return app;
 }
+

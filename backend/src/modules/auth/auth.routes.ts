@@ -16,6 +16,8 @@ import {
     logout,
     getUserProfile,
 } from './auth.service.js';
+import { authenticate } from '../../plugins/auth.middleware.js';
+
 
 export async function authRoutes(app: FastifyInstance) {
     const typedApp = app.withTypeProvider<ZodTypeProvider>();
@@ -152,6 +154,7 @@ export async function authRoutes(app: FastifyInstance) {
     typedApp.get(
         '/auth/me',
         {
+            preHandler: [authenticate],
             schema: {
                 tags: ['Auth'],
                 description: 'Get current user profile (requires Bearer token)',
@@ -164,20 +167,12 @@ export async function authRoutes(app: FastifyInstance) {
             },
         },
         async (request, reply) => {
-            try {
-                await request.jwtVerify();
-            } catch {
+            if (!request.currentUser) {
                 return reply.status(401).send({ message: 'Unauthorized' });
             }
 
-            const payload = request.user as { sub: string };
-            const profile = await getUserProfile(payload.sub);
-
-            if (!profile) {
-                return reply.status(404).send({ message: 'User profile not found' });
-            }
-
-            return reply.send(profile);
+            return reply.send(request.currentUser);
         },
     );
 }
+
