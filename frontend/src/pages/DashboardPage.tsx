@@ -1,8 +1,9 @@
-import { useContext, useState } from 'react';
+import { useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Users, Clock, ChevronRight, LogOut, Zap } from 'lucide-react';
+import { Plus, Users, Clock, ChevronRight, LogOut, Zap, Loader2 } from 'lucide-react';
 import { AuthContext, DemoContext } from '../App';
 import { MOCK_DASHBOARD_ROOMS, type TemplateId } from '../mocks/data';
+import { getRoomsApi, type RoomApiData } from '../api/rooms';
 import TemplateModal from '../components/TemplateModal';
 import ThemeToggle from '../components/ThemeToggle';
 import './DashboardPage.css';
@@ -20,6 +21,12 @@ const TEMPLATE_NAMES: Record<TemplateId, string> = {
   'went-well': 'Went Well / Improve / Actions',
 };
 
+const TEMPLATE_EMOJIS: Record<TemplateId, string> = {
+  'went-well': '🚀',
+  'mad-sad-glad': '🎭',
+  'start-stop-continue': '🚦',
+};
+
 function timeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime();
   const hours = Math.floor(diff / 3600000);
@@ -35,6 +42,39 @@ export default function DashboardPage() {
   const { isDemoMode } = useContext(DemoContext);
   const navigate = useNavigate();
   const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [realRooms, setRealRooms] = useState<RoomApiData[]>([]);
+  const [isLoadingRooms, setIsLoadingRooms] = useState(!isDemoMode);
+
+  useEffect(() => {
+    if (!isDemoMode) {
+      setIsLoadingRooms(true);
+      getRoomsApi()
+        .then(setRealRooms)
+        .catch((err) => console.error('Failed to load rooms:', err))
+        .finally(() => setIsLoadingRooms(false));
+    }
+  }, [isDemoMode]);
+
+  const displayRooms = isDemoMode
+    ? MOCK_DASHBOARD_ROOMS.map(r => ({
+        id: r.id,
+        name: r.name,
+        template: r.template,
+        stage: r.stage,
+        emoji: r.emoji,
+        participantCount: r.participantCount,
+        createdAt: r.createdAt,
+      }))
+    : realRooms.map(r => ({
+        id: r.id,
+        name: r.name,
+        template: r.template,
+        stage: r.stage as keyof typeof STAGE_LABELS,
+        emoji: TEMPLATE_EMOJIS[r.template as TemplateId] || '🔄',
+        participantCount: r.participantCount,
+        createdAt: r.createdAt,
+      }));
+
 
   return (
     <div className="dashboard-page">
@@ -122,53 +162,61 @@ export default function DashboardPage() {
         <section className="dashboard-rooms">
           <div className="section-header">
             <h2>Мои ретроспективы</h2>
-            <span className="badge badge-purple">{MOCK_DASHBOARD_ROOMS.length}</span>
+            <span className="badge badge-purple">{displayRooms.length}</span>
           </div>
           <div className="rooms-grid">
-            {MOCK_DASHBOARD_ROOMS.map((room, index) => {
-              const stage = STAGE_LABELS[room.stage];
-              return (
-                <div
-                  key={room.id}
-                  className="room-card glass animate-fade-in"
-                  style={{ animationDelay: `${index * 80}ms` }}
-                  onClick={() => navigate(`/retro/${room.id}`)}
-                  id={`room-card-${room.id}`}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => e.key === 'Enter' && navigate(`/retro/${room.id}`)}
-                >
-                  <div className="room-card-top">
-                    <div className="room-emoji">{room.emoji}</div>
-                    <span
-                      className="badge"
-                      style={{
-                        background: `${stage.color}20`,
-                        color: stage.color,
-                        border: `1px solid ${stage.color}40`
-                      }}
-                    >
-                      {stage.label}
-                    </span>
+            {isLoadingRooms ? (
+              <div className="rooms-loading glass">
+                <Loader2 size={24} className="animate-spin" />
+                <span>Загрузка комнат...</span>
+              </div>
+            ) : (
+              displayRooms.map((room, index) => {
+                const stage = STAGE_LABELS[room.stage] || STAGE_LABELS.brainstorming;
+                return (
+                  <div
+                    key={room.id}
+                    className="room-card glass animate-fade-in"
+                    style={{ animationDelay: `${index * 80}ms` }}
+                    onClick={() => navigate(`/retro/${room.id}`)}
+                    id={`room-card-${room.id}`}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => e.key === 'Enter' && navigate(`/retro/${room.id}`)}
+                  >
+                    <div className="room-card-top">
+                      <div className="room-emoji">{room.emoji}</div>
+                      <span
+                        className="badge"
+                        style={{
+                          background: `${stage.color}20`,
+                          color: stage.color,
+                          border: `1px solid ${stage.color}40`
+                        }}
+                      >
+                        {stage.label}
+                      </span>
+                    </div>
+                    <h3 className="room-name">{room.name}</h3>
+                    <p className="room-template">{TEMPLATE_NAMES[room.template as TemplateId] || room.template}</p>
+                    <div className="room-card-footer">
+                      <span className="room-meta">
+                        <Users size={14} />
+                        {room.participantCount} участников
+                      </span>
+                      <span className="room-meta">
+                        <Clock size={14} />
+                        {timeAgo(room.createdAt)}
+                      </span>
+                      <ChevronRight size={16} className="room-arrow" />
+                    </div>
                   </div>
-                  <h3 className="room-name">{room.name}</h3>
-                  <p className="room-template">{TEMPLATE_NAMES[room.template]}</p>
-                  <div className="room-card-footer">
-                    <span className="room-meta">
-                      <Users size={14} />
-                      {room.participantCount} участников
-                    </span>
-                    <span className="room-meta">
-                      <Clock size={14} />
-                      {timeAgo(room.createdAt)}
-                    </span>
-                    <ChevronRight size={16} className="room-arrow" />
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
 
             {/* Create new card */}
+
             <div
               className="room-card room-card-new glass"
               onClick={() => setShowTemplateModal(true)}
