@@ -1,11 +1,29 @@
 import { eq, count } from 'drizzle-orm';
 import { getDb } from '../../db/connection.js';
-import { retroRooms, retroParticipants, userProfiles } from '../../db/schema.js';
-import type { CreateRoomInput, RoomResponse } from './rooms.schemas.js';
+import { retroRooms, retroParticipants, retroCards, retroVotes, userProfiles } from '../../db/schema.js';
+import type { CreateRoomInput, RoomResponse, RoomDetailResponse, CardResponse, CreateCardInput } from './rooms.schemas.js';
 
 function buildInviteLink(roomId: string): string {
     return `https://chalysh.pro/dev/retro/${roomId}`;
 }
+
+const TEMPLATE_COLUMNS: Record<string, Array<{ id: string; title: string; emoji: string; color: string }>> = {
+    'mad-sad-glad': [
+        { id: 'col-1', title: 'Mad 😤', emoji: '😤', color: '#ef4444' },
+        { id: 'col-2', title: 'Sad 😢', emoji: '😢', color: '#3b82f6' },
+        { id: 'col-3', title: 'Glad 😄', emoji: '😄', color: '#22c55e' },
+    ],
+    'start-stop-continue': [
+        { id: 'col-1', title: 'Start ▶️', emoji: '▶️', color: '#22c55e' },
+        { id: 'col-2', title: 'Stop ⏹️', emoji: '⏹️', color: '#ef4444' },
+        { id: 'col-3', title: 'Continue 🔄', emoji: '🔄', color: '#3b82f6' },
+    ],
+    'went-well': [
+        { id: 'col-1', title: 'What went well ✅', emoji: '✅', color: '#22c55e' },
+        { id: 'col-2', title: 'What to improve 🔧', emoji: '🔧', color: '#f59e0b' },
+        { id: 'col-3', title: 'Action Items 📋', emoji: '📋', color: '#7c3aed' },
+    ],
+};
 
 export async function createRoom(
     userProfile: typeof userProfiles.$inferSelect,
@@ -52,7 +70,6 @@ export async function createRoom(
 export async function getUserRooms(userId: string): Promise<RoomResponse[]> {
     const db = getDb();
 
-    // Select rooms where user is a participant
     const userParticipations = db
         .select({ roomId: retroParticipants.roomId })
         .from(retroParticipants)
@@ -99,7 +116,7 @@ export async function getUserRooms(userId: string): Promise<RoomResponse[]> {
 export async function getRoomById(
     roomId: string,
     userProfile: typeof userProfiles.$inferSelect,
-): Promise<RoomResponse | null> {
+): Promise<RoomDetailResponse | null> {
     const db = getDb();
 
     const room = db
@@ -112,15 +129,15 @@ export async function getRoomById(
         return null;
     }
 
-    // Check if user is already a participant, if not, join as participant
-    const existingParticipant = db
+    // Join room if not participant
+    const participants = db
         .select()
         .from(retroParticipants)
         .where(eq(retroParticipants.roomId, roomId))
-        .all()
-        .find(p => p.userId === userProfile.id);
+        .all();
 
-    if (!existingParticipant) {
+    const isParticipant = participants.some(p => p.userId === userProfile.id);
+    if (!isParticipant) {
         db.insert(retroParticipants)
             .values({
                 roomId: room.id,
@@ -128,13 +145,44 @@ export async function getRoomById(
                 role: 'participant',
             })
             .run();
+        participants.push({
+            id: 'temp',
+            roomId: room.id,
+            userId: userProfile.id,
+            role: 'participant',
+            joinedAt: new Date().toISOString(),
+        });
     }
 
-    const participantCountRes = db
-        .select({ value: count() })
-        .from(retroParticipants)
-        .where(eq(retroParticipants.roomId, room.id))
-        .get();
+    // Get cards
+    const dbCards = db
+        .select()
+        .from(retroCards)
+        .where(eq(retroCards.roomId, roomId))
+        .all();
+
+    const cards: CardResponse[] = [];
+    for (const card of dbCards) {
+        const votes = db
+            .select({ userId: retroVotes.userId })
+            .from(retroVotes)
+            .where(eq(retroVotes.cardId, card.id))
+            .all()
+            .map(v => v.userId);
+
+        cards.push({
+            id: card.id,
+            text: card.text,
+            authorId: card.authorId,
+            columnId: card.columnId,
+            votes,
+            clusterId: card.clusterId,
+            isAnonymous: card.isAnonymous === 'true',
+            createdAt: card.createdAt || new Date().toISOString(),
+        });
+    }
+
+    const columns = TEMPLATE_COLUMNS[room.template] || TEMPLATE_COLUMNS['went-well'];
 
     return {
         id: room.id,
@@ -144,8 +192,81 @@ export async function getRoomById(
         facilitatorId: room.facilitatorId,
         anonymousMode: room.anonymousMode === 'true',
         inviteLink: buildInviteLink(room.id),
-        participantCount: participantCountRes?.value || 1,
+        participantCount: participants.length,
+        participantIds: participants.map(p => p.userId),
+        columns,
+        cards,
         createdAt: room.createdAt || new Date().toISOString(),
         updatedAt: room.updatedAt || new Date().toISOString(),
     };
+}
+
+export async function addCardToRoom(
+    roomId: string,
+    userProfile: typeof userProfiles.$inferSelect,
+    input: CreateCardInput,
+): Promise<CardResponse> {
+    const db = getDb();
+
+    const room = db
+        .select()
+        .from(retroRooms)
+        .where(eq(retroRooms.id, roomId))
+        .get();
+
+    if (!room) {
+        throw new Error('Room not found');
+    }
+
+    const createdCard = db
+        .insert(retroCards)
+        .values({
+            roomId: room.id,
+            columnId: input.columnId,
+            text: input.text,
+            authorId: userProfile.id,
+            isAnonymous: room.anonymousMode,
+        })
+        .returning()
+        .get();
+
+    return {
+        id: createdCard.id,
+        text: createdCard.text,
+        authorId: createdCard.authorId,
+        columnId: createdCard.columnId,
+        votes: [],
+        clusterId: createdCard.clusterId,
+        isAnonymous: createdCard.isAnonymous === 'true',
+        createdAt: createdCard.createdAt || new Date().toISOString(),
+    };
+}
+
+export async function deleteCardFromRoom(
+    cardId: string,
+    userProfile: typeof userProfiles.$inferSelect,
+): Promise<boolean> {
+    const db = getDb();
+
+    const card = db
+        .select()
+        .from(retroCards)
+        .where(eq(retroCards.id, cardId))
+        .get();
+
+    if (!card) return false;
+
+    const room = db
+        .select()
+        .from(retroRooms)
+        .where(eq(retroRooms.id, card.roomId))
+        .get();
+
+    // Allow author or facilitator to delete
+    if (card.authorId !== userProfile.id && room?.facilitatorId !== userProfile.id) {
+        throw new Error('Forbidden');
+    }
+
+    db.delete(retroCards).where(eq(retroCards.id, cardId)).run();
+    return true;
 }

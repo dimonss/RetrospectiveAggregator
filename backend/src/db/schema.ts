@@ -34,3 +34,23 @@ export const retroParticipants = sqliteTable('retro_participants', {
     joinedAt: text('joined_at').$defaultFn(() => new Date().toISOString()),
 });
 
+export const retroCards = sqliteTable('retro_cards', {
+    id: text('id').primaryKey().$defaultFn(() => randomUUID()),
+    roomId: text('room_id').notNull().references(() => retroRooms.id, { onDelete: 'cascade' }),
+    columnId: text('column_id').notNull(),
+    text: text('text').notNull(),
+    authorId: text('author_id').notNull().references(() => userProfiles.id, { onDelete: 'cascade' }),
+    clusterId: text('cluster_id'),
+    isAnonymous: text('is_anonymous').notNull().$default(() => 'false'),
+    createdAt: text('created_at').$defaultFn(() => new Date().toISOString()),
+    updatedAt: text('updated_at').$defaultFn(() => new Date().toISOString()),
+});
+
+export const retroVotes = sqliteTable('retro_votes', {
+    id: text('id').primaryKey().$defaultFn(() => randomUUID()),
+    cardId: text('card_id').notNull().references(() => retroCards.id, { onDelete: 'cascade' }),
+    userId: text('user_id').notNull().references(() => userProfiles.id, { onDelete: 'cascade' }),
+    createdAt: text('created_at').$defaultFn(() => new Date().toISOString()),
+});
+
+

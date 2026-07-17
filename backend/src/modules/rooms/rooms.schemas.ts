@@ -21,5 +21,49 @@ export const roomResponseSchema = z.object({
 
 export const roomListResponseSchema = z.array(roomResponseSchema);
 
+
+export const cardSchema = z.object({
+    id: z.string(),
+    text: z.string(),
+    authorId: z.string(),
+    columnId: z.string(),
+    votes: z.array(z.string()),
+    clusterId: z.string().optional().nullable(),
+    isAnonymous: z.boolean(),
+    createdAt: z.string(),
+});
+
+export const columnSchema = z.object({
+    id: z.string(),
+    title: z.string(),
+    emoji: z.string(),
+    color: z.string(),
+});
+
+export const roomDetailResponseSchema = z.object({
+    id: z.string(),
+    name: z.string(),
+    template: z.string(),
+    stage: z.string(),
+    facilitatorId: z.string(),
+    anonymousMode: z.boolean(),
+    inviteLink: z.string(),
+    participantCount: z.number(),
+    participantIds: z.array(z.string()),
+    columns: z.array(columnSchema),
+    cards: z.array(cardSchema),
+    createdAt: z.string(),
+    updatedAt: z.string(),
+});
+
+export const createCardSchema = z.object({
+    text: z.string().min(1, 'Card text is required'),
+    columnId: z.string().min(1, 'Column ID is required'),
+});
+
 export type CreateRoomInput = z.infer<typeof createRoomSchema>;
 export type RoomResponse = z.infer<typeof roomResponseSchema>;
+export type RoomDetailResponse = z.infer<typeof roomDetailResponseSchema>;
+export type CreateCardInput = z.infer<typeof createCardSchema>;
+export type CardResponse = z.infer<typeof cardSchema>;
+

@@ -5,11 +5,16 @@ import {
     createRoomSchema,
     roomResponseSchema,
     roomListResponseSchema,
+    roomDetailResponseSchema,
+    createCardSchema,
+    cardSchema,
 } from './rooms.schemas.js';
 import {
     createRoom,
     getUserRooms,
     getRoomById,
+    addCardToRoom,
+    deleteCardFromRoom,
 } from './rooms.service.js';
 
 export async function roomsRoutes(app: FastifyInstance) {
@@ -60,17 +65,17 @@ export async function roomsRoutes(app: FastifyInstance) {
         },
     );
 
-    // GET /rooms/:id - Get room by id
+    // GET /rooms/:id - Get room detail by id
     typedApp.get(
         '/rooms/:id',
         {
             preHandler: [authenticate],
             schema: {
                 tags: ['Rooms'],
-                description: 'Get room details by ID (joins user as participant if new)',
+                description: 'Get detailed room information by ID (cards, columns, etc.)',
                 security: [{ bearerAuth: [] }],
                 response: {
-                    200: roomResponseSchema,
+                    200: roomDetailResponseSchema,
                     401: { type: 'object', properties: { message: { type: 'string' } } },
                     404: { type: 'object', properties: { message: { type: 'string' } } },
                 },
@@ -86,6 +91,69 @@ export async function roomsRoutes(app: FastifyInstance) {
             }
 
             return reply.send(room);
+        },
+    );
+
+    // POST /rooms/:id/cards - Add card to room
+    typedApp.post(
+        '/rooms/:id/cards',
+        {
+            preHandler: [authenticate],
+            schema: {
+                tags: ['Cards'],
+                description: 'Add a new card to a retrospective room',
+                security: [{ bearerAuth: [] }],
+                body: createCardSchema,
+                response: {
+                    201: cardSchema,
+                    401: { type: 'object', properties: { message: { type: 'string' } } },
+                    404: { type: 'object', properties: { message: { type: 'string' } } },
+                },
+            },
+        },
+        async (request, reply) => {
+            const user = request.currentUser!;
+            const { id } = request.params as { id: string };
+            try {
+                const card = await addCardToRoom(id, user, request.body);
+                return reply.status(201).send(card);
+            } catch (err: unknown) {
+                const message = err instanceof Error ? err.message : 'Error adding card';
+                return reply.status(404).send({ message });
+            }
+        },
+    );
+
+    // DELETE /rooms/cards/:cardId - Delete card
+    typedApp.delete(
+        '/rooms/cards/:cardId',
+        {
+            preHandler: [authenticate],
+            schema: {
+                tags: ['Cards'],
+                description: 'Delete a card from a room',
+                security: [{ bearerAuth: [] }],
+                response: {
+                    200: { type: 'object', properties: { success: { type: 'boolean' } } },
+                    401: { type: 'object', properties: { message: { type: 'string' } } },
+                    403: { type: 'object', properties: { message: { type: 'string' } } },
+                    404: { type: 'object', properties: { message: { type: 'string' } } },
+                },
+            },
+        },
+        async (request, reply) => {
+            const user = request.currentUser!;
+            const { cardId } = request.params as { cardId: string };
+            try {
+                const deleted = await deleteCardFromRoom(cardId, user);
+                if (!deleted) {
+                    return reply.status(404).send({ message: 'Card not found' });
+                }
+                return reply.send({ success: true });
+            } catch (err: unknown) {
+                const message = err instanceof Error ? err.message : 'Forbidden';
+                return reply.status(403).send({ message });
+            }
         },
     );
 }

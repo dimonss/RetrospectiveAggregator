@@ -15,6 +15,13 @@
       "when": 1784650000000,
       "tag": "0001_create_retro_rooms_and_participants",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1784655000000,
+      "tag": "0002_create_retro_cards_and_votes",
+      "breakpoints": true
     }
   ]
 }
