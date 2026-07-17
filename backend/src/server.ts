@@ -1,4 +1,10 @@
 import 'dotenv/config';
+
+// Bypass SSL certificate verification issues in local development (chalysh.pro intermediate cert chain issue)
+// if (process.env.NODE_ENV !== 'production') {
+//     process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+// }
+
 import { loadEnv } from './config/env.js';
 import { initDb } from './db/connection.js';
 import { buildApp } from './app.js';
