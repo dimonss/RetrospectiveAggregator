@@ -59,6 +59,7 @@ export const roomDetailResponseSchema = z.object({
 export const createCardSchema = z.object({
     text: z.string().min(1, 'Card text is required'),
     columnId: z.string().min(1, 'Column ID is required'),
+    isAnonymous: z.boolean().optional(),
 });
 
 export type CreateRoomInput = z.infer<typeof createRoomSchema>;

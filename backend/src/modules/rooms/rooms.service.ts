@@ -225,7 +225,7 @@ export async function addCardToRoom(
             columnId: input.columnId,
             text: input.text,
             authorId: userProfile.id,
-            isAnonymous: room.anonymousMode,
+            isAnonymous: String(input.isAnonymous ?? (room.anonymousMode === 'true')),
         })
         .returning()
         .get();
