@@ -1,8 +1,8 @@
-import { useState, useContext } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, ArrowRight, Loader2 } from 'lucide-react';
 import { TEMPLATES, MOCK_ROOM, type TemplateId } from '../mocks/data';
-import { DemoContext } from '../App';
+import { useDemo } from '../context/DemoContext';
 import { createRoomApi } from '../api/rooms';
 import './TemplateModal.css';
 
@@ -12,7 +12,7 @@ interface Props {
 
 export default function TemplateModal({ onClose }: Props) {
   const navigate = useNavigate();
-  const { isDemoMode } = useContext(DemoContext);
+  const { isDemoMode } = useDemo();
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateId>('went-well');
   const [roomName, setRoomName] = useState('');
   const [isLoading, setIsLoading] = useState(false);

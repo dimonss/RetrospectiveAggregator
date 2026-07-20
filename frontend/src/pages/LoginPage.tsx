@@ -1,25 +1,16 @@
-import { useContext, useState, useCallback } from 'react';
-import { AuthContext, DemoContext } from '../App';
+import { useState, useCallback } from 'react';
+import { useAuth, authUserToUser } from '../context/AuthContext';
+import { useDemo } from '../context/DemoContext';
 import { CURRENT_USER } from '../mocks/data';
-import { loginWithTelegram, loginWithGoogle, type AuthUser } from '../api/auth';
+import { loginWithTelegram, loginWithGoogle } from '../api/auth';
 import { useGoogleAuth } from '../hooks/useGoogleAuth';
 import { useTelegramAuth } from '../hooks/useTelegramAuth';
 import ThemeToggle from '../components/ThemeToggle';
 import './LoginPage.css';
 
-function authUserToUser(authUser: AuthUser) {
-  const name = [authUser.firstName, authUser.lastName].filter(Boolean).join(' ');
-  return {
-    id: authUser.id,
-    name,
-    avatar: authUser.photoUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${authUser.username || authUser.id}`,
-    color: '#7c3aed',
-  };
-}
-
 export default function LoginPage() {
-  const { login } = useContext(AuthContext);
-  const { isDemoMode, toggleDemoMode } = useContext(DemoContext);
+  const { login } = useAuth();
+  const { isDemoMode, toggleDemoMode } = useDemo();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

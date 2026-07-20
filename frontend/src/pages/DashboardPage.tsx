@@ -1,7 +1,8 @@
-import { useContext, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Users, Clock, ChevronRight, LogOut, Zap, Loader2 } from 'lucide-react';
-import { AuthContext, DemoContext } from '../App';
+import { useAuth } from '../context/AuthContext';
+import { useDemo } from '../context/DemoContext';
 import { MOCK_DASHBOARD_ROOMS, type TemplateId } from '../mocks/data';
 import { getRoomsApi, type RoomApiData } from '../api/rooms';
 import TemplateModal from '../components/TemplateModal';
@@ -38,8 +39,8 @@ function timeAgo(dateStr: string) {
 }
 
 export default function DashboardPage() {
-  const { user, logout } = useContext(AuthContext);
-  const { isDemoMode } = useContext(DemoContext);
+  const { user, logout } = useAuth();
+  const { isDemoMode } = useDemo();
   const navigate = useNavigate();
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [realRooms, setRealRooms] = useState<RoomApiData[]>([]);

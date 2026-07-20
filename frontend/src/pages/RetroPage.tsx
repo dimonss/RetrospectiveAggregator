@@ -1,4 +1,4 @@
-import { useState, useContext, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import {
   DndContext,
@@ -17,7 +17,8 @@ import {
   Eye, EyeOff, ArrowRight, Users, Copy, Check,
   ArrowLeft, Sparkles, Loader2
 } from 'lucide-react';
-import { AuthContext, DemoContext } from '../App';
+import { useAuth } from '../context/AuthContext';
+import { useDemo } from '../context/DemoContext';
 import {
   MOCK_ROOM, MOCK_USERS, MAX_VOTES,
   type RetroRoom, type RetroCard, type Stage, type ActionItem,
@@ -56,8 +57,8 @@ const STAGE_HINTS: Record<Stage, { title: string; hint: string; emoji: string }>
 
 export default function RetroPage() {
   const { id } = useParams();
-  const { user } = useContext(AuthContext);
-  const { isDemoMode } = useContext(DemoContext);
+  const { user } = useAuth();
+  const { isDemoMode } = useDemo();
   const navigate = useNavigate();
 
   const [room, setRoom] = useState<RetroRoom>({ ...MOCK_ROOM });

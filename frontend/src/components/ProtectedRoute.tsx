@@ -1,11 +1,11 @@
-import React, { useContext } from 'react';
+import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { AuthContext } from '../App';
+import { useAuth } from '../context/AuthContext';
 
 const REDIRECT_STORAGE_KEY = 'redirect_path';
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const location = useLocation();
 
   if (!user) {
@@ -20,7 +20,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 export function PublicRoute({ children }: { children: React.ReactNode }) {
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const location = useLocation();
 
   if (user) {
