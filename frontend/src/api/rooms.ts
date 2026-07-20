@@ -1,4 +1,5 @@
 import { apiRequest } from './client';
+import type { User } from '../mocks/data';
 
 export interface CreateRoomParams {
     name: string;
@@ -32,6 +33,7 @@ export interface CardApiData {
 
 export interface RoomDetailApiData extends RoomApiData {
     participantIds: string[];
+    participants?: User[];
     columns: Array<{
         id: string;
         title: string;

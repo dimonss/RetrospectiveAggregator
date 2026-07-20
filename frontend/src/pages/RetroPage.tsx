@@ -82,6 +82,7 @@ export default function RetroPage() {
             stage: data.stage,
             facilitatorId: data.facilitatorId,
             participantIds: data.participantIds,
+            participants: data.participants || [],
             anonymousMode: data.anonymousMode,
             createdAt: data.createdAt,
             columns: data.columns,
@@ -396,6 +397,7 @@ export default function RetroPage() {
                   currentUserId={user?.id || 'u1'}
                   anonymousMode={room.anonymousMode}
                   userVotesLeft={votesLeft}
+                  participants={room.participants && room.participants.length > 0 ? room.participants : MOCK_USERS}
                   onAddCard={handleAddCard}
                   onVote={handleVote}
                   onDeleteCard={handleDeleteCard}
@@ -415,6 +417,7 @@ export default function RetroPage() {
                 userVotesLeft={0}
                 columnColor={activeColumn.color}
                 cardIndex={0}
+                participants={room.participants && room.participants.length > 0 ? room.participants : MOCK_USERS}
                 isDragging
                 onVote={() => {}}
                 onDelete={() => {}}
@@ -428,7 +431,7 @@ export default function RetroPage() {
       {/* Participant avatars bar */}
       <div className="retro-participants-bar glass">
         <span className="participants-label">Участники:</span>
-        {MOCK_USERS.map(u => (
+        {(room.participants && room.participants.length > 0 ? room.participants : MOCK_USERS).map(u => (
           <div key={u.id} className="participant-chip" data-tooltip={u.name}>
             <img
               src={u.avatar}
@@ -436,7 +439,7 @@ export default function RetroPage() {
               className="participant-avatar"
               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
             />
-            <span className="participant-status" style={{ background: u.color }} />
+            <span className="participant-status" style={{ background: u.color || '#7c3aed' }} />
           </div>
         ))}
       </div>

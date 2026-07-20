@@ -44,6 +44,7 @@ export interface RetroRoom {
   stage: Stage;
   facilitatorId: string;
   participantIds: string[];
+  participants?: User[];
   columns: RetroColumn[];
   cards: RetroCard[];
   clusters: CardCluster[];
@@ -124,6 +125,7 @@ export const MOCK_ROOM: RetroRoom = {
   stage: 'brainstorming',
   facilitatorId: 'u1',
   participantIds: ['u1', 'u2', 'u3', 'u4'],
+  participants: MOCK_USERS,
   anonymousMode: true,
   createdAt: new Date().toISOString(),
   columns: [

@@ -8,7 +8,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { type RetroColumn, type RetroCard, type Stage } from '../mocks/data';
+import { type RetroColumn, type RetroCard, type Stage, type User } from '../mocks/data';
 import RetroCardComponent from './RetroCard';
 import AddCardForm from './AddCardForm';
 import './RetroColumn.css';
@@ -20,6 +20,7 @@ interface SortableCardProps {
   userVotesLeft: number;
   columnColor: string;
   cardIndex: number;
+  participants?: User[];
   onVote: (cardId: string) => void;
   onDelete: (cardId: string) => void;
   onAddActionItem: (cardId: string, text: string, assigneeId: string) => void;
@@ -49,6 +50,7 @@ interface Props {
   currentUserId: string;
   anonymousMode: boolean;
   userVotesLeft: number;
+  participants?: User[];
   onAddCard: (text: string, columnId: string, isAnonymous: boolean) => void;
   onVote: (cardId: string) => void;
   onDeleteCard: (cardId: string) => void;
@@ -57,7 +59,7 @@ interface Props {
 
 export default function RetroColumn({
   column, cards, stage, currentUserId, anonymousMode,
-  userVotesLeft, onAddCard, onVote, onDeleteCard, onAddActionItem
+  userVotesLeft, participants, onAddCard, onVote, onDeleteCard, onAddActionItem
 }: Props) {
   const { setNodeRef, isOver } = useDroppable({ id: column.id });
 
@@ -95,6 +97,7 @@ export default function RetroColumn({
               userVotesLeft={userVotesLeft}
               columnColor={column.color}
               cardIndex={index}
+              participants={participants}
               onVote={onVote}
               onDelete={onDeleteCard}
               onAddActionItem={onAddActionItem}

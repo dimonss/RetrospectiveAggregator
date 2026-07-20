@@ -15,6 +15,7 @@ interface Props {
   columnColor: string;
   cardIndex: number;
   isGrouped?: boolean;
+  participants?: Array<{ id: string; name: string; avatar: string; color?: string }>;
   onVote: (cardId: string) => void;
   onDelete: (cardId: string) => void;
   onAddActionItem: (cardId: string, text: string, assigneeId: string) => void;
@@ -23,7 +24,7 @@ interface Props {
 
 export default function RetroCard({
   card, stage, currentUserId, userVotesLeft,
-  columnColor, cardIndex, isGrouped,
+  columnColor, cardIndex, isGrouped, participants,
   onVote, onDelete, onAddActionItem, isDragging
 }: Props) {
   const { user: currentUser } = useAuth();
@@ -42,7 +43,7 @@ export default function RetroCard({
 
   const author = (currentUser && card.authorId === currentUser.id)
     ? currentUser
-    : MOCK_USERS.find(u => u.id === card.authorId);
+    : (participants?.find(u => u.id === card.authorId) || MOCK_USERS.find(u => u.id === card.authorId));
 
   const submitAction = () => {
     if (actionText.trim()) {
