@@ -1,8 +1,9 @@
-import { useContext, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useContext, useState, useCallback } from 'react';
 import { AuthContext, DemoContext } from '../App';
 import { CURRENT_USER } from '../mocks/data';
 import { loginWithTelegram, loginWithGoogle, type AuthUser } from '../api/auth';
+import { useGoogleAuth } from '../hooks/useGoogleAuth';
+import { useTelegramAuth } from '../hooks/useTelegramAuth';
 import ThemeToggle from '../components/ThemeToggle';
 import './LoginPage.css';
 
@@ -19,107 +20,58 @@ function authUserToUser(authUser: AuthUser) {
 export default function LoginPage() {
   const { login } = useContext(AuthContext);
   const { isDemoMode, toggleDemoMode } = useContext(DemoContext);
-  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleGoogleCallback = async (idToken: string) => {
+  const handleGoogleCallback = useCallback(async (idToken: string) => {
     setIsLoading(true);
     setError(null);
     try {
       const response = await loginWithGoogle(idToken);
       login(authUserToUser(response.user));
-      navigate('/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ошибка авторизации Google');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [login]);
 
-  const handleTelegramCallback = async (user: any) => {
+  const handleTelegramCallback = useCallback(async (user: any) => {
     setIsLoading(true);
     setError(null);
     try {
       const response = await loginWithTelegram(user);
       login(authUserToUser(response.user));
-      navigate('/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ошибка авторизации Telegram');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [login]);
 
-  useEffect(() => {
-    if (isDemoMode) return;
+  // Clean SDK hooks
+  useGoogleAuth({
+    containerId: 'google-real-btn',
+    clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+    onSuccess: handleGoogleCallback,
+    disabled: isDemoMode,
+  });
 
-    // Инициализация Google Sign-In SDK
-    const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-    if (googleClientId) {
-      const initGoogle = () => {
-        const google = (window as any).google;
-        if (google?.accounts?.id) {
-          google.accounts.id.initialize({
-            client_id: googleClientId,
-            callback: (response: any) => {
-              handleGoogleCallback(response.credential);
-            },
-          });
-          const container = document.getElementById('google-real-btn');
-          if (container) {
-            google.accounts.id.renderButton(container, {
-              theme: 'outline',
-              size: 'large',
-              width: 320,
-              shape: 'rectangular',
-              text: 'signin_with',
-            });
-          }
-        }
-      };
-
-      if (!(window as any).google) {
-        const script = document.createElement('script');
-        script.src = 'https://accounts.google.com/gsi/client';
-        script.async = true;
-        script.onload = initGoogle;
-        document.head.appendChild(script);
-      } else {
-        initGoogle();
-      }
-    }
-
-    // Инициализация Telegram Login Widget
-    const botName = import.meta.env.VITE_TELEGRAM_BOT || 'ChalyshAuthBot';
-    const tgContainer = document.getElementById('telegram-real-btn');
-    if (tgContainer) {
-      tgContainer.innerHTML = '';
-      (window as any).__onTelegramAuth = (user: any) => {
-        handleTelegramCallback(user);
-      };
-
-      const script = document.createElement('script');
-      script.async = true;
-      script.src = 'https://telegram.org/js/telegram-widget.js?22';
-      script.setAttribute('data-telegram-login', botName);
-      script.setAttribute('data-size', 'large');
-      script.setAttribute('data-radius', '8');
-      script.setAttribute('data-onauth', '__onTelegramAuth(user)');
-      script.setAttribute('data-request-access', 'write');
-      tgContainer.appendChild(script);
-    }
-  }, [isDemoMode]);
+  useTelegramAuth({
+    containerId: 'telegram-real-btn',
+    botName: import.meta.env.VITE_TELEGRAM_BOT || 'ChalyshAuthBot',
+    onSuccess: handleTelegramCallback,
+    disabled: isDemoMode,
+  });
 
   const handleGoogleDemoLogin = () => {
     login(CURRENT_USER);
-    navigate('/dashboard');
   };
 
   const handleTelegramDemoLogin = () => {
     login({ ...CURRENT_USER, name: 'TG Пользователь', id: 'u-tg' });
-    navigate('/dashboard');
   };
+
 
   return (
     <div className="login-page">

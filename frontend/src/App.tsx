@@ -7,6 +7,7 @@ import SummaryPage from './pages/SummaryPage';
 import { type User } from './mocks/data';
 import { getMe, logoutApi, type AuthUser } from './api/auth';
 import { clearTokens, getTokens } from './api/client';
+import { ProtectedRoute, PublicRoute } from './components/ProtectedRoute';
 
 export const AuthContext = React.createContext<{
   user: User | null;
@@ -34,8 +35,26 @@ function authUserToUser(authUser: AuthUser): User {
   };
 }
 
+function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="/" element={<PublicRoute><LoginPage /></PublicRoute>} />
+      <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+      <Route path="/retro/:id" element={<ProtectedRoute><RetroPage /></ProtectedRoute>} />
+      <Route path="/retro/:id/summary" element={<ProtectedRoute><SummaryPage /></ProtectedRoute>} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
+
+
+
+
 export default function App() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => {
+    const savedDemoUser = sessionStorage.getItem('demo_user');
+    return savedDemoUser ? JSON.parse(savedDemoUser) : null;
+  });
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [isDemoMode, setIsDemoMode] = useState<boolean>(() => {
     const saved = localStorage.getItem('isDemoMode');
@@ -53,13 +72,26 @@ export default function App() {
     setIsDemoMode(prev => {
       const next = !prev;
       localStorage.setItem('isDemoMode', String(next));
+      if (next) {
+        setUser(null);
+        sessionStorage.removeItem('demo_user');
+      }
       return next;
     });
   };
 
+  const handleLogin = useCallback((userData: User) => {
+    setUser(userData);
+    if (isDemoMode) {
+      sessionStorage.setItem('demo_user', JSON.stringify(userData));
+    }
+  }, [isDemoMode]);
+
   const handleLogout = useCallback(async () => {
     if (!isDemoMode) {
       await logoutApi();
+    } else {
+      sessionStorage.removeItem('demo_user');
     }
     setUser(null);
   }, [isDemoMode]);
@@ -75,9 +107,11 @@ export default function App() {
           })
           .catch(() => {
             clearTokens();
+            setUser(null);
           })
           .finally(() => setIsLoading(false));
       } else {
+        setUser(null);
         setIsLoading(false);
       }
     } else {
@@ -92,18 +126,13 @@ export default function App() {
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
       <DemoContext.Provider value={{ isDemoMode, toggleDemoMode }}>
-        <AuthContext.Provider value={{ user, login: setUser, logout: handleLogout }}>
+        <AuthContext.Provider value={{ user, login: handleLogin, logout: handleLogout }}>
           <BrowserRouter basename={import.meta.env.BASE_URL}>
-            <Routes>
-              <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <LoginPage />} />
-              <Route path="/dashboard" element={user ? <DashboardPage /> : <Navigate to="/" replace />} />
-              <Route path="/retro/:id" element={user ? <RetroPage /> : <Navigate to="/" replace />} />
-              <Route path="/retro/:id/summary" element={user ? <SummaryPage /> : <Navigate to="/" replace />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
+            <AppRoutes />
           </BrowserRouter>
         </AuthContext.Provider>
       </DemoContext.Provider>
     </ThemeContext.Provider>
   );
 }
+
