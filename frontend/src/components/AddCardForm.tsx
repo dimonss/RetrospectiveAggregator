@@ -1,20 +1,22 @@
 import React, { useState } from 'react';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, Eye, EyeOff } from 'lucide-react';
 import './AddCardForm.css';
 
 interface Props {
   columnId: string;
   columnColor: string;
-  onAdd: (text: string, columnId: string) => void;
+  defaultAnonymous?: boolean;
+  onAdd: (text: string, columnId: string, isAnonymous: boolean) => void;
 }
 
-export default function AddCardForm({ columnId, columnColor, onAdd }: Props) {
+export default function AddCardForm({ columnId, columnColor, defaultAnonymous = false, onAdd }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [text, setText] = useState('');
+  const [isAnonymous, setIsAnonymous] = useState(defaultAnonymous);
 
   const submit = () => {
     if (text.trim()) {
-      onAdd(text.trim(), columnId);
+      onAdd(text.trim(), columnId, isAnonymous);
       setText('');
       setIsOpen(false);
     }
@@ -35,7 +37,10 @@ export default function AddCardForm({ columnId, columnColor, onAdd }: Props) {
     return (
       <button
         className="add-card-trigger"
-        onClick={() => setIsOpen(true)}
+        onClick={() => {
+          setIsAnonymous(defaultAnonymous);
+          setIsOpen(true);
+        }}
         id={`btn-add-card-${columnId}`}
         style={{ '--col-color': columnColor } as React.CSSProperties}
       >
@@ -63,20 +68,33 @@ export default function AddCardForm({ columnId, columnColor, onAdd }: Props) {
       <div className="add-card-form-hint">Enter — добавить, Shift+Enter — перенос строки</div>
       <div className="add-card-form-btns">
         <button
-          className="btn-primary"
-          style={{ padding: '8px 16px', fontSize: '13px' }}
-          onClick={submit}
-          id={`btn-submit-card-${columnId}`}
+          type="button"
+          className={`add-card-anon-toggle ${isAnonymous ? 'add-card-anon-toggle--on' : ''}`}
+          onClick={() => setIsAnonymous(!isAnonymous)}
+          id={`btn-toggle-card-anon-${columnId}`}
+          title={isAnonymous ? 'Отправить анонимно' : 'Отправить открыто'}
         >
-          Добавить
+          {isAnonymous ? <EyeOff size={14} /> : <Eye size={14} />}
+          <span>{isAnonymous ? 'Анонимно' : 'Открыто'}</span>
         </button>
-        <button
-          className="btn-icon"
-          onClick={() => { setIsOpen(false); setText(''); }}
-          id={`btn-cancel-card-${columnId}`}
-        >
-          <X size={18} />
-        </button>
+
+        <div className="add-card-form-actions-right">
+          <button
+            className="btn-primary"
+            style={{ padding: '8px 16px', fontSize: '13px' }}
+            onClick={submit}
+            id={`btn-submit-card-${columnId}`}
+          >
+            Добавить
+          </button>
+          <button
+            className="btn-icon"
+            onClick={() => { setIsOpen(false); setText(''); }}
+            id={`btn-cancel-card-${columnId}`}
+          >
+            <X size={18} />
+          </button>
+        </div>
       </div>
     </div>
   );

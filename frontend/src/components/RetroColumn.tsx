@@ -17,7 +17,6 @@ interface SortableCardProps {
   card: RetroCard;
   stage: Stage;
   currentUserId: string;
-  anonymousMode: boolean;
   userVotesLeft: number;
   columnColor: string;
   cardIndex: number;
@@ -50,7 +49,7 @@ interface Props {
   currentUserId: string;
   anonymousMode: boolean;
   userVotesLeft: number;
-  onAddCard: (text: string, columnId: string) => void;
+  onAddCard: (text: string, columnId: string, isAnonymous: boolean) => void;
   onVote: (cardId: string) => void;
   onDeleteCard: (cardId: string) => void;
   onAddActionItem: (cardId: string, text: string, assigneeId: string) => void;
@@ -93,7 +92,6 @@ export default function RetroColumn({
               card={card}
               stage={stage}
               currentUserId={currentUserId}
-              anonymousMode={anonymousMode}
               userVotesLeft={userVotesLeft}
               columnColor={column.color}
               cardIndex={index}
@@ -119,6 +117,7 @@ export default function RetroColumn({
           <AddCardForm
             columnId={column.id}
             columnColor={column.color}
+            defaultAnonymous={anonymousMode}
             onAdd={onAddCard}
           />
         </div>

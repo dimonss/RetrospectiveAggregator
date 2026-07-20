@@ -56,10 +56,10 @@ export async function getRoomApi(id: string): Promise<RoomDetailApiData> {
     return apiRequest<RoomDetailApiData>(`/rooms/${id}`);
 }
 
-export async function addCardApi(roomId: string, columnId: string, text: string): Promise<CardApiData> {
+export async function addCardApi(roomId: string, columnId: string, text: string, isAnonymous?: boolean): Promise<CardApiData> {
     return apiRequest<CardApiData>(`/rooms/${roomId}/cards`, {
         method: 'POST',
-        body: JSON.stringify({ columnId, text }),
+        body: JSON.stringify({ columnId, text, isAnonymous }),
     });
 }
 

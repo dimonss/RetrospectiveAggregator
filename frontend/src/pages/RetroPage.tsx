@@ -114,7 +114,7 @@ export default function RetroPage() {
 
   // ─── Handlers ────────────────────────────────────────────────────────────────
 
-  const handleAddCard = async (text: string, columnId: string) => {
+  const handleAddCard = async (text: string, columnId: string, isAnonymous: boolean) => {
     if (isDemoMode || !id) {
       const newCard: RetroCard = {
         id: `c-${Date.now()}`,
@@ -122,6 +122,7 @@ export default function RetroPage() {
         authorId: user?.id || 'u1',
         columnId,
         votes: [],
+        isAnonymous,
         actionItems: [],
       };
       setRoom(prev => ({ ...prev, cards: [...prev.cards, newCard] }));
@@ -129,7 +130,7 @@ export default function RetroPage() {
     }
 
     try {
-      const createdCard = await addCardApi(id, columnId, text);
+      const createdCard = await addCardApi(id, columnId, text, isAnonymous);
       const newCard: RetroCard = {
         id: createdCard.id,
         text: createdCard.text,
@@ -303,16 +304,16 @@ export default function RetroPage() {
         </div>
 
         <div className="retro-header-right">
-          {/* Anonymous toggle */}
+          {/* Anonymous default toggle */}
           {room.stage === 'brainstorming' && (
             <button
               id="btn-anon-toggle"
               className={`anon-toggle tooltip-bottom ${room.anonymousMode ? 'anon-toggle--on' : ''}`}
               onClick={handleAnonymousToggle}
-              data-tooltip={room.anonymousMode ? 'Анонимно: вкл' : 'Анонимно: выкл'}
+              data-tooltip={room.anonymousMode ? 'Новые карточки: анонимно по умолчанию' : 'Новые карточки: открыто по умолчанию'}
             >
               {room.anonymousMode ? <EyeOff size={16} /> : <Eye size={16} />}
-              <span>{room.anonymousMode ? 'Анонимно' : 'Открыто'}</span>
+              <span>{room.anonymousMode ? 'Анонимно по умолч.' : 'Открыто по умолч.'}</span>
             </button>
           )}
 
@@ -411,7 +412,6 @@ export default function RetroPage() {
                 card={activeCard}
                 stage={room.stage}
                 currentUserId={user?.id || 'u1'}
-                anonymousMode={false}
                 userVotesLeft={0}
                 columnColor={activeColumn.color}
                 cardIndex={0}

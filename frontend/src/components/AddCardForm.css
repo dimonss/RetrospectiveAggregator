@@ -64,5 +64,39 @@
 .add-card-form-btns {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: var(--space-sm);
 }
+
+.add-card-form-actions-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.add-card-anon-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-glass);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.add-card-anon-toggle:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.add-card-anon-toggle--on {
+  background: rgba(124, 58, 237, 0.15);
+  border-color: rgba(124, 58, 237, 0.4);
+  color: var(--accent-secondary, #a78bfa);
+}
+

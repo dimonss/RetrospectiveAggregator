@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ThumbsUp, Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { type RetroCard, type Stage, MOCK_USERS } from '../mocks/data';
+import { useAuth } from '../context/AuthContext';
 import './RetroCard.css';
 
 const NOTE_COLORS = ['#fef3c7', '#fce7f3', '#dcfce7', '#dbeafe', '#ede9fe'];
@@ -10,7 +11,6 @@ interface Props {
   card: RetroCard;
   stage: Stage;
   currentUserId: string;
-  anonymousMode: boolean;
   userVotesLeft: number;
   columnColor: string;
   cardIndex: number;
@@ -22,10 +22,11 @@ interface Props {
 }
 
 export default function RetroCard({
-  card, stage, currentUserId, anonymousMode, userVotesLeft,
+  card, stage, currentUserId, userVotesLeft,
   columnColor, cardIndex, isGrouped,
   onVote, onDelete, onAddActionItem, isDragging
 }: Props) {
+  const { user: currentUser } = useAuth();
   const colorIdx = cardIndex % NOTE_COLORS.length;
   const bgColor = NOTE_COLORS[colorIdx];
   const textColor = NOTE_TEXT_COLORS[colorIdx];
@@ -39,7 +40,9 @@ export default function RetroCard({
   const [assigneeId, setAssigneeId] = useState(currentUserId);
   const [showActions, setShowActions] = useState(false);
 
-  const author = MOCK_USERS.find(u => u.id === card.authorId);
+  const author = (currentUser && card.authorId === currentUser.id)
+    ? currentUser
+    : MOCK_USERS.find(u => u.id === card.authorId);
 
   const submitAction = () => {
     if (actionText.trim()) {
@@ -68,15 +71,21 @@ export default function RetroCard({
       <p className="card-text">{card.text}</p>
 
       {/* Author */}
-      {!anonymousMode && (
+      {card.isAnonymous ? (
+        <div className="card-author card-author--anon">
+          <span className="card-author-name">Аноним</span>
+        </div>
+      ) : (
         <div className="card-author">
-          <img
-            src={author?.avatar}
-            alt={author?.name}
-            className="card-author-avatar"
-            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-          />
-          <span className="card-author-name">{author?.name || 'Аноним'}</span>
+          {author?.avatar && (
+            <img
+              src={author.avatar}
+              alt={author.name}
+              className="card-author-avatar"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+            />
+          )}
+          <span className="card-author-name">{author?.name || 'Участник'}</span>
         </div>
       )}
 
