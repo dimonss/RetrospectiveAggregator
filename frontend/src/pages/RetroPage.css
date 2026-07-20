@@ -4,6 +4,18 @@
   flex-direction: column;
 }
 
+.retro-page-loading {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-md);
+  color: var(--text-secondary);
+  font-size: 15px;
+}
+
+
 /* Header */
 .retro-header {
   position: sticky;

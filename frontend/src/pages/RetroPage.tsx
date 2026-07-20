@@ -1,4 +1,4 @@
-import { useState, useContext } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import {
   DndContext,
@@ -15,13 +15,14 @@ import {
 } from '@dnd-kit/sortable';
 import {
   Eye, EyeOff, ArrowRight, Users, Copy, Check,
-  ArrowLeft, Sparkles
+  ArrowLeft, Sparkles, Loader2
 } from 'lucide-react';
-import { AuthContext } from '../App';
+import { AuthContext, DemoContext } from '../App';
 import {
   MOCK_ROOM, MOCK_USERS, MAX_VOTES,
   type RetroRoom, type RetroCard, type Stage, type ActionItem,
 } from '../mocks/data';
+import { getRoomApi, addCardApi, deleteCardApi } from '../api/rooms';
 import StageIndicator from '../components/StageIndicator';
 import RetroColumn from '../components/RetroColumn';
 import RetroCardComponent from '../components/RetroCard';
@@ -56,15 +57,50 @@ const STAGE_HINTS: Record<Stage, { title: string; hint: string; emoji: string }>
 export default function RetroPage() {
   const { id } = useParams();
   const { user } = useContext(AuthContext);
+  const { isDemoMode } = useContext(DemoContext);
   const navigate = useNavigate();
 
   const [room, setRoom] = useState<RetroRoom>({ ...MOCK_ROOM });
+  const [isLoading, setIsLoading] = useState(!isDemoMode);
   const [copied, setCopied] = useState(false);
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
 
   const sensors = useSensors(useSensor(PointerSensor, {
     activationConstraint: { distance: 8 },
   }));
+
+  useEffect(() => {
+    if (!isDemoMode && id) {
+      setIsLoading(true);
+      getRoomApi(id)
+        .then((data) => {
+          setRoom({
+            id: data.id,
+            name: data.name,
+            template: data.template,
+            stage: data.stage,
+            facilitatorId: data.facilitatorId,
+            participantIds: data.participantIds,
+            anonymousMode: data.anonymousMode,
+            createdAt: data.createdAt,
+            columns: data.columns,
+            clusters: [],
+            cards: data.cards.map((c) => ({
+              id: c.id,
+              text: c.text,
+              authorId: c.authorId,
+              columnId: c.columnId,
+              votes: c.votes,
+              clusterId: c.clusterId || undefined,
+              isAnonymous: c.isAnonymous,
+              actionItems: [],
+            })),
+          });
+        })
+        .catch((err) => console.error('Error fetching room:', err))
+        .finally(() => setIsLoading(false));
+    }
+  }, [id, isDemoMode]);
 
   const isFacilitator = user?.id === room.facilitatorId;
   const currentStageIdx = STAGE_ORDER.indexOf(room.stage);
@@ -77,21 +113,52 @@ export default function RetroPage() {
 
   // ─── Handlers ────────────────────────────────────────────────────────────────
 
-  const handleAddCard = (text: string, columnId: string) => {
-    const newCard: RetroCard = {
-      id: `c-${Date.now()}`,
-      text,
-      authorId: user?.id || 'u1',
-      columnId,
-      votes: [],
-      actionItems: [],
-    };
-    setRoom(prev => ({ ...prev, cards: [...prev.cards, newCard] }));
+  const handleAddCard = async (text: string, columnId: string) => {
+    if (isDemoMode || !id) {
+      const newCard: RetroCard = {
+        id: `c-${Date.now()}`,
+        text,
+        authorId: user?.id || 'u1',
+        columnId,
+        votes: [],
+        actionItems: [],
+      };
+      setRoom(prev => ({ ...prev, cards: [...prev.cards, newCard] }));
+      return;
+    }
+
+    try {
+      const createdCard = await addCardApi(id, columnId, text);
+      const newCard: RetroCard = {
+        id: createdCard.id,
+        text: createdCard.text,
+        authorId: createdCard.authorId,
+        columnId: createdCard.columnId,
+        votes: createdCard.votes,
+        clusterId: createdCard.clusterId || undefined,
+        isAnonymous: createdCard.isAnonymous,
+        actionItems: [],
+      };
+      setRoom(prev => ({ ...prev, cards: [...prev.cards, newCard] }));
+    } catch (err) {
+      console.error('Failed to add card:', err);
+    }
   };
 
-  const handleDeleteCard = (cardId: string) => {
-    setRoom(prev => ({ ...prev, cards: prev.cards.filter(c => c.id !== cardId) }));
+  const handleDeleteCard = async (cardId: string) => {
+    if (isDemoMode) {
+      setRoom(prev => ({ ...prev, cards: prev.cards.filter(c => c.id !== cardId) }));
+      return;
+    }
+
+    try {
+      await deleteCardApi(cardId);
+      setRoom(prev => ({ ...prev, cards: prev.cards.filter(c => c.id !== cardId) }));
+    } catch (err) {
+      console.error('Failed to delete card:', err);
+    }
   };
+
 
   const handleVote = (cardId: string) => {
     if (votesLeft <= 0) return;
@@ -192,10 +259,20 @@ export default function RetroPage() {
   const activeCard = activeCardId ? room.cards.find(c => c.id === activeCardId) : null;
   const activeColumn = activeCard ? room.columns.find(c => c.id === activeCard.columnId) : null;
 
-  const hint = STAGE_HINTS[room.stage];
+  const hint = STAGE_HINTS[room.stage] || STAGE_HINTS.brainstorming;
+
+  if (isLoading) {
+    return (
+      <div className="retro-page-loading">
+        <Loader2 size={32} className="animate-spin" />
+        <span>Загрузка ретроспективы...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="retro-page">
+
       {/* Header */}
       <header className="retro-header glass-elevated">
         <div className="retro-header-left">
