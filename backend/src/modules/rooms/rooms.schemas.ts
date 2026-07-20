@@ -40,6 +40,13 @@ export const columnSchema = z.object({
     color: z.string(),
 });
 
+export const participantProfileSchema = z.object({
+    id: z.string(),
+    name: z.string(),
+    avatar: z.string(),
+    color: z.string(),
+});
+
 export const roomDetailResponseSchema = z.object({
     id: z.string(),
     name: z.string(),
@@ -50,6 +57,7 @@ export const roomDetailResponseSchema = z.object({
     inviteLink: z.string(),
     participantCount: z.number(),
     participantIds: z.array(z.string()),
+    participants: z.array(participantProfileSchema).optional(),
     columns: z.array(columnSchema),
     cards: z.array(cardSchema),
     createdAt: z.string(),

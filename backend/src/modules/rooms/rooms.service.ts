@@ -182,6 +182,17 @@ export async function getRoomById(
         });
     }
 
+    const participantUserIds = participants.map(p => p.userId);
+    const allUserProfiles = db.select().from(userProfiles).all();
+    const participantProfiles = allUserProfiles
+        .filter(u => participantUserIds.includes(u.id))
+        .map(u => ({
+            id: u.id,
+            name: [u.firstName, u.lastName].filter(Boolean).join(' ') || u.username || 'Участник',
+            avatar: u.photoUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.username || u.id}`,
+            color: '#7c3aed',
+        }));
+
     const columns = TEMPLATE_COLUMNS[room.template] || TEMPLATE_COLUMNS['went-well'];
 
     return {
@@ -193,7 +204,8 @@ export async function getRoomById(
         anonymousMode: room.anonymousMode === 'true',
         inviteLink: buildInviteLink(room.id),
         participantCount: participants.length,
-        participantIds: participants.map(p => p.userId),
+        participantIds: participantUserIds,
+        participants: participantProfiles,
         columns,
         cards,
         createdAt: room.createdAt || new Date().toISOString(),
