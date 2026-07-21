@@ -9,19 +9,19 @@ function buildInviteLink(roomId: string): string {
 
 const TEMPLATE_COLUMNS: Record<string, Array<{ id: string; title: string; emoji: string; color: string }>> = {
     'mad-sad-glad': [
-        { id: 'col-1', title: 'Mad 😤', emoji: '😤', color: '#ef4444' },
-        { id: 'col-2', title: 'Sad 😢', emoji: '😢', color: '#3b82f6' },
-        { id: 'col-3', title: 'Glad 😄', emoji: '😄', color: '#22c55e' },
+        { id: 'col-1', title: 'Злюсь 😤', emoji: '😤', color: '#ef4444' },
+        { id: 'col-2', title: 'Грущу 😢', emoji: '😢', color: '#3b82f6' },
+        { id: 'col-3', title: 'Радуюсь 😄', emoji: '😄', color: '#22c55e' },
     ],
     'start-stop-continue': [
-        { id: 'col-1', title: 'Start ▶️', emoji: '▶️', color: '#22c55e' },
-        { id: 'col-2', title: 'Stop ⏹️', emoji: '⏹️', color: '#ef4444' },
-        { id: 'col-3', title: 'Continue 🔄', emoji: '🔄', color: '#3b82f6' },
+        { id: 'col-1', title: 'Начать ▶️', emoji: '▶️', color: '#22c55e' },
+        { id: 'col-2', title: 'Прекратить ⏹️', emoji: '⏹️', color: '#ef4444' },
+        { id: 'col-3', title: 'Продолжить 🔄', emoji: '🔄', color: '#3b82f6' },
     ],
     'went-well': [
-        { id: 'col-1', title: 'What went well ✅', emoji: '✅', color: '#22c55e' },
-        { id: 'col-2', title: 'What to improve 🔧', emoji: '🔧', color: '#f59e0b' },
-        { id: 'col-3', title: 'Action Items 📋', emoji: '📋', color: '#7c3aed' },
+        { id: 'col-1', title: 'Что прошло хорошо ✅', emoji: '✅', color: '#22c55e' },
+        { id: 'col-2', title: 'Что улучшить 🔧', emoji: '🔧', color: '#f59e0b' },
+        { id: 'col-3', title: 'Задачи 📋', emoji: '📋', color: '#7c3aed' },
     ],
 };
 

@@ -50,7 +50,7 @@ const STAGE_HINTS: Record<Stage, { title: string; hint: string; emoji: string }>
   discussion: {
     emoji: '💬',
     title: 'Обсуждение',
-    hint: 'Карточки отсортированы по популярности. Добавляйте action items к каждой теме.',
+    hint: 'Карточки отсортированы по популярности. Добавляйте задачи к каждой теме.',
   },
 };
 

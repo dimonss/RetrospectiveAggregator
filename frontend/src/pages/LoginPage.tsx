@@ -84,7 +84,7 @@ export default function LoginPage() {
           <span className="feature-pill">💡 Анонимный сбор</span>
           <span className="feature-pill">🗂️ Кластеризация</span>
           <span className="feature-pill">🗳️ Голосование</span>
-          <span className="feature-pill">📋 Action Items</span>
+          <span className="feature-pill">📋 Задачи</span>
         </div>
 
         {/* Auth card */}

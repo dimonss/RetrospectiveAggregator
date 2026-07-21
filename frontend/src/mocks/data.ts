@@ -83,35 +83,35 @@ export const MOCK_USERS: User[] = [
 export const TEMPLATES: Template[] = [
   {
     id: 'mad-sad-glad',
-    name: 'Mad / Sad / Glad',
+    name: 'Злюсь / Грущу / Радуюсь',
     description: 'Эмоциональный срез команды — что злит, что расстраивает, что радует',
     emoji: '😤😢😄',
     columns: [
-      { title: 'Mad 😤', emoji: '😤', color: '#ef4444' },
-      { title: 'Sad 😢', emoji: '😢', color: '#3b82f6' },
-      { title: 'Glad 😄', emoji: '😄', color: '#22c55e' },
+      { title: 'Злюсь 😤', emoji: '😤', color: '#ef4444' },
+      { title: 'Грущу 😢', emoji: '😢', color: '#3b82f6' },
+      { title: 'Радуюсь 😄', emoji: '😄', color: '#22c55e' },
     ],
   },
   {
     id: 'start-stop-continue',
-    name: 'Start / Stop / Continue',
+    name: 'Начать / Прекратить / Продолжить',
     description: 'Процессный срез — что начать, что прекратить, что продолжать делать',
     emoji: '▶️⏹️🔄',
     columns: [
-      { title: 'Start ▶️', emoji: '▶️', color: '#22c55e' },
-      { title: 'Stop ⏹️', emoji: '⏹️', color: '#ef4444' },
-      { title: 'Continue 🔄', emoji: '🔄', color: '#3b82f6' },
+      { title: 'Начать ▶️', emoji: '▶️', color: '#22c55e' },
+      { title: 'Прекратить ⏹️', emoji: '⏹️', color: '#ef4444' },
+      { title: 'Продолжить 🔄', emoji: '🔄', color: '#3b82f6' },
     ],
   },
   {
     id: 'went-well',
-    name: 'What went well / Improve / Actions',
+    name: 'Что прошло хорошо / Что улучшить / Задачи',
     description: 'Классическая agile-ретроспектива с акцентом на действия',
     emoji: '✅🔧📋',
     columns: [
-      { title: 'What went well ✅', emoji: '✅', color: '#22c55e' },
-      { title: 'What to improve 🔧', emoji: '🔧', color: '#f59e0b' },
-      { title: 'Action Items 📋', emoji: '📋', color: '#7c3aed' },
+      { title: 'Что прошло хорошо ✅', emoji: '✅', color: '#22c55e' },
+      { title: 'Что улучшить 🔧', emoji: '🔧', color: '#f59e0b' },
+      { title: 'Задачи 📋', emoji: '📋', color: '#7c3aed' },
     ],
   },
 ];
@@ -120,7 +120,7 @@ export const TEMPLATES: Template[] = [
 
 export const MOCK_ROOM: RetroRoom = {
     id: 'room-123',
-  name: 'Sprint 42 Ретроспектива',
+  name: 'Спринт 42 Ретроспектива',
   template: 'went-well',
   stage: 'brainstorming',
   facilitatorId: 'u1',
@@ -129,9 +129,9 @@ export const MOCK_ROOM: RetroRoom = {
   anonymousMode: true,
   createdAt: new Date().toISOString(),
   columns: [
-    { id: 'col-1', title: 'What went well ✅', emoji: '✅', color: '#22c55e' },
-    { id: 'col-2', title: 'What to improve 🔧', emoji: '🔧', color: '#f59e0b' },
-    { id: 'col-3', title: 'Action Items 📋', emoji: '📋', color: '#7c3aed' },
+    { id: 'col-1', title: 'Что прошло хорошо ✅', emoji: '✅', color: '#22c55e' },
+    { id: 'col-2', title: 'Что улучшить 🔧', emoji: '🔧', color: '#f59e0b' },
+    { id: 'col-3', title: 'Задачи 📋', emoji: '📋', color: '#7c3aed' },
   ],
   cards: [
     { id: 'c1', text: 'Отличная коммуникация в команде', authorId: 'u1', columnId: 'col-1', votes: ['u2', 'u3', 'u4'], actionItems: [], isAnonymous: false },
@@ -151,7 +151,7 @@ export const MOCK_ROOM: RetroRoom = {
 export const MOCK_DASHBOARD_ROOMS = [
   {
       id: 'room-123',
-    name: 'Sprint 42 Ретроспектива',
+    name: 'Спринт 42 Ретроспектива',
     template: 'went-well' as TemplateId,
     stage: 'brainstorming' as Stage,
     participantCount: 4,
@@ -160,7 +160,7 @@ export const MOCK_DASHBOARD_ROOMS = [
   },
   {
     id: 'room-old-1',
-    name: 'Sprint 41 — Post-mortem',
+    name: 'Спринт 41 — Разбор полётов',
     template: 'mad-sad-glad' as TemplateId,
     stage: 'discussion' as Stage,
     participantCount: 6,

@@ -24,7 +24,7 @@ function generateMarkdown(room: RetroRoom, items: ReturnType<typeof buildSummary
     `# 🔄 Ретроспектива: ${room.name}`,
     `*${date}*`,
     '',
-    '## 📋 Action Items',
+    '## 📋 Задачи',
     '',
     ...items.map(ai => {
       const assignee = (room.participants || MOCK_USERS).find(u => u.id === ai.assigneeId);
@@ -142,7 +142,7 @@ export default function SummaryPage() {
           <section className="summary-section" id="section-action-items">
             <div className="section-title">
               <CheckSquare size={20} style={{ color: '#7c3aed' }} />
-              <h2>Action Items</h2>
+              <h2>Задачи</h2>
               <span className="badge badge-purple">{actionItems.length}</span>
             </div>
 
@@ -231,7 +231,7 @@ export default function SummaryPage() {
                   </span>
                 </div>
                 <div className="stat-row">
-                  <span className="stat-row-label">Action Items</span>
+                  <span className="stat-row-label">Задачи</span>
                   <span className="stat-row-value">{actionItems.length}</span>
                 </div>
                 <div className="stat-row">

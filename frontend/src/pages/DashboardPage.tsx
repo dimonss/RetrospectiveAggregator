@@ -16,9 +16,9 @@ const STAGE_LABELS: Record<string, { label: string; color: string }> = {
 };
 
 const TEMPLATE_NAMES: Record<TemplateId, string> = {
-  'mad-sad-glad': 'Mad / Sad / Glad',
-  'start-stop-continue': 'Start / Stop / Continue',
-  'went-well': 'Went Well / Improve / Actions',
+  'mad-sad-glad': 'Злюсь / Грущу / Радуюсь',
+  'start-stop-continue': 'Начать / Прекратить / Продолжить',
+  'went-well': 'Что прошло хорошо / Что улучшить / Задачи',
 };
 
 const TEMPLATE_EMOJIS: Record<TemplateId, string> = {
@@ -138,7 +138,7 @@ export default function DashboardPage() {
               <div className="stat-value">
                 {isLoadingStats ? <Loader2 size={18} className="animate-spin loader-svg" /> : displayStats.totalActionItems}
               </div>
-              <div className="stat-label">Action Items</div>
+              <div className="stat-label">Задачи</div>
             </div>
           </div>
           <div className="stat-card glass">
@@ -272,7 +272,7 @@ export default function DashboardPage() {
               <span className="tip-number">4</span>
               <div>
                 <div className="tip-title">Экспортируйте</div>
-                <div className="tip-desc">Action Items в Telegram/Slack</div>
+                <div className="tip-desc">Задачи в Telegram/Slack</div>
               </div>
             </div>
           </div>

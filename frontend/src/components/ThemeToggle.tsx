@@ -10,7 +10,7 @@ export default function ThemeToggle() {
       className="btn-icon theme-toggle-btn tooltip-bottom"
       id="btn-theme-toggle"
       data-tooltip={theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}
-      aria-label="Toggle theme"
+      aria-label="Переключить тему"
     >
       {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
     </button>
