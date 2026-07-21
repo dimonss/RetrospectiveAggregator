@@ -4,7 +4,7 @@ import { Plus, Users, Clock, ChevronRight, LogOut, Zap, Loader2 } from 'lucide-r
 import { useAuth } from '../context/AuthContext';
 import { useDemo } from '../context/DemoContext';
 import { MOCK_DASHBOARD_ROOMS, type TemplateId } from '../mocks/data';
-import { getRoomsApi, type RoomApiData } from '../api/rooms';
+import { getRoomsApi, getRoomStatsApi, type RoomApiData, type RoomStatsApiData } from '../api/rooms';
 import TemplateModal from '../components/TemplateModal';
 import ThemeToggle from '../components/ThemeToggle';
 import './DashboardPage.css';
@@ -44,15 +44,23 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [realRooms, setRealRooms] = useState<RoomApiData[]>([]);
+  const [realStats, setRealStats] = useState<RoomStatsApiData | null>(null);
   const [isLoadingRooms, setIsLoadingRooms] = useState(!isDemoMode);
+  const [isLoadingStats, setIsLoadingStats] = useState(!isDemoMode);
 
   useEffect(() => {
     if (!isDemoMode) {
       setIsLoadingRooms(true);
+      setIsLoadingStats(true);
       getRoomsApi()
         .then(setRealRooms)
         .catch((err) => console.error('Failed to load rooms:', err))
         .finally(() => setIsLoadingRooms(false));
+
+      getRoomStatsApi()
+        .then(setRealStats)
+        .catch((err) => console.error('Failed to load room stats:', err))
+        .finally(() => setIsLoadingStats(false));
     }
   }, [isDemoMode]);
 
@@ -76,6 +84,9 @@ export default function DashboardPage() {
         createdAt: r.createdAt,
       }));
 
+  const displayStats = isDemoMode
+    ? { totalSessions: 3, totalActionItems: 12, totalParticipants: 22, totalCards: 64 }
+    : (realStats || { totalSessions: 0, totalActionItems: 0, totalParticipants: 0, totalCards: 0 });
 
   return (
     <div className="dashboard-page">
@@ -132,32 +143,41 @@ export default function DashboardPage() {
           <div className="stat-card glass">
             <div className="stat-icon" style={{ background: 'rgba(124,58,237,0.2)' }}>🔄</div>
             <div>
-              <div className="stat-value">3</div>
+              <div className="stat-value">
+                {isLoadingStats ? <Loader2 size={18} className="animate-spin loader-svg" /> : displayStats.totalSessions}
+              </div>
               <div className="stat-label">Всего сессий</div>
             </div>
           </div>
           <div className="stat-card glass">
             <div className="stat-icon" style={{ background: 'rgba(34,197,94,0.2)' }}>✅</div>
             <div>
-              <div className="stat-value">12</div>
+              <div className="stat-value">
+                {isLoadingStats ? <Loader2 size={18} className="animate-spin loader-svg" /> : displayStats.totalActionItems}
+              </div>
               <div className="stat-label">Action Items</div>
             </div>
           </div>
           <div className="stat-card glass">
             <div className="stat-icon" style={{ background: 'rgba(245,158,11,0.2)' }}>👥</div>
             <div>
-              <div className="stat-value">22</div>
+              <div className="stat-value">
+                {isLoadingStats ? <Loader2 size={18} className="animate-spin loader-svg" /> : displayStats.totalParticipants}
+              </div>
               <div className="stat-label">Участников</div>
             </div>
           </div>
           <div className="stat-card glass">
             <div className="stat-icon" style={{ background: 'rgba(59,130,246,0.2)' }}>💡</div>
             <div>
-              <div className="stat-value">64</div>
+              <div className="stat-value">
+                {isLoadingStats ? <Loader2 size={18} className="animate-spin loader-svg" /> : displayStats.totalCards}
+              </div>
               <div className="stat-label">Карточек идей</div>
             </div>
           </div>
         </section>
+
 
         {/* Rooms */}
         <section className="dashboard-rooms">

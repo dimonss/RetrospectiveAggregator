@@ -43,6 +43,13 @@ export interface RoomDetailApiData extends RoomApiData {
     cards: CardApiData[];
 }
 
+export interface RoomStatsApiData {
+    totalSessions: number;
+    totalActionItems: number;
+    totalParticipants: number;
+    totalCards: number;
+}
+
 export async function createRoomApi(params: CreateRoomParams): Promise<RoomApiData> {
     return apiRequest<RoomApiData>('/rooms', {
         method: 'POST',
@@ -52,6 +59,10 @@ export async function createRoomApi(params: CreateRoomParams): Promise<RoomApiDa
 
 export async function getRoomsApi(): Promise<RoomApiData[]> {
     return apiRequest<RoomApiData[]>('/rooms');
+}
+
+export async function getRoomStatsApi(): Promise<RoomStatsApiData> {
+    return apiRequest<RoomStatsApiData>('/rooms/stats');
 }
 
 export async function getRoomApi(id: string): Promise<RoomDetailApiData> {
@@ -70,3 +81,4 @@ export async function deleteCardApi(cardId: string): Promise<{ success: boolean 
         method: 'DELETE',
     });
 }
+
