@@ -14,7 +14,7 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable';
 import {
-  Eye, EyeOff, ArrowRight, Users, Copy, Check,
+  ArrowRight, Users, Copy, Check,
   ArrowLeft, Sparkles, Loader2
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -204,10 +204,6 @@ export default function RetroPage() {
     setRoom(prev => ({ ...prev, stage }));
   };
 
-  const handleAnonymousToggle = () => {
-    setRoom(prev => ({ ...prev, anonymousMode: !prev.anonymousMode }));
-  };
-
   const handleCopyLink = () => {
     navigator.clipboard.writeText(window.location.href).catch(() => {});
     setCopied(true);
@@ -307,19 +303,6 @@ export default function RetroPage() {
         </div>
 
         <div className="retro-header-right">
-          {/* Anonymous default toggle */}
-          {room.stage === 'brainstorming' && (
-            <button
-              id="btn-anon-toggle"
-              className={`anon-toggle tooltip-bottom ${room.anonymousMode ? 'anon-toggle--on' : ''}`}
-              onClick={handleAnonymousToggle}
-              data-tooltip={room.anonymousMode ? 'Новые карточки: анонимно по умолчанию' : 'Новые карточки: открыто по умолчанию'}
-            >
-              {room.anonymousMode ? <EyeOff size={16} /> : <Eye size={16} />}
-              <span>{room.anonymousMode ? 'Анонимно по умолч.' : 'Открыто по умолч.'}</span>
-            </button>
-          )}
-
           {/* Votes counter */}
           {room.stage === 'voting' && (
             <div className="votes-counter">
