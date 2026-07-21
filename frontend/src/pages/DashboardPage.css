@@ -169,6 +169,17 @@
   gap: var(--space-md);
 }
 
+.rooms-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: var(--space-sm);
+  min-height: 180px;
+  color: var(--text-muted);
+}
+
 .room-card {
   border-radius: var(--radius-lg);
   padding: var(--space-lg);

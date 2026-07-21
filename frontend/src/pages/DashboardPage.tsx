@@ -167,9 +167,11 @@ export default function DashboardPage() {
           </div>
           <div className="rooms-grid">
             {isLoadingRooms ? (
-              <div className="rooms-loading glass">
-                <Loader2 size={24} className="animate-spin" />
-                <span>Загрузка комнат...</span>
+              <div className="room-card glass animate-fade-in rooms-loading">
+                <div className="loader-icon-wrapper">
+                  <Loader2 size={24} className="animate-spin loader-svg" />
+                </div>
+                <span className="loader-text">Загрузка комнат...</span>
               </div>
             ) : (
               displayRooms.map((room, index) => {

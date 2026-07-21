@@ -267,8 +267,10 @@ export default function RetroPage() {
   if (isLoading) {
     return (
       <div className="retro-page-loading">
-        <Loader2 size={32} className="animate-spin" />
-        <span>Загрузка ретроспективы...</span>
+        <div className="loader-icon-wrapper" style={{ width: '56px', height: '56px' }}>
+          <Loader2 size={28} className="animate-spin loader-svg" />
+        </div>
+        <span className="loader-text">Загрузка ретроспективы...</span>
       </div>
     );
   }
