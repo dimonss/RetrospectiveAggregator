@@ -11,6 +11,7 @@ import {
     cardSchema,
     deleteCardParamsSchema,
     deleteCardResponseSchema,
+    errorResponseSchema,
 } from './rooms.schemas.js';
 import {
     createRoom,
@@ -36,7 +37,7 @@ export async function roomsRoutes(app: FastifyInstance) {
                 body: createRoomSchema,
                 response: {
                     201: roomResponseSchema,
-                    401: { type: 'object', properties: { message: { type: 'string' } } },
+                    401: errorResponseSchema,
                 },
             },
         },
@@ -58,7 +59,7 @@ export async function roomsRoutes(app: FastifyInstance) {
                 security: [{ bearerAuth: [] }],
                 response: {
                     200: roomListResponseSchema,
-                    401: { type: 'object', properties: { message: { type: 'string' } } },
+                    401: errorResponseSchema,
                 },
             },
         },
@@ -80,7 +81,7 @@ export async function roomsRoutes(app: FastifyInstance) {
                 security: [{ bearerAuth: [] }],
                 response: {
                     200: roomStatsResponseSchema,
-                    401: { type: 'object', properties: { message: { type: 'string' } } },
+                    401: errorResponseSchema,
                 },
             },
         },
@@ -102,8 +103,8 @@ export async function roomsRoutes(app: FastifyInstance) {
                 security: [{ bearerAuth: [] }],
                 response: {
                     200: roomDetailResponseSchema,
-                    401: { type: 'object', properties: { message: { type: 'string' } } },
-                    404: { type: 'object', properties: { message: { type: 'string' } } },
+                    401: errorResponseSchema,
+                    404: errorResponseSchema,
                 },
             },
         },
@@ -132,8 +133,8 @@ export async function roomsRoutes(app: FastifyInstance) {
                 body: createCardSchema,
                 response: {
                     201: cardSchema,
-                    401: { type: 'object', properties: { message: { type: 'string' } } },
-                    404: { type: 'object', properties: { message: { type: 'string' } } },
+                    401: errorResponseSchema,
+                    404: errorResponseSchema,
                 },
             },
         },
@@ -162,9 +163,9 @@ export async function roomsRoutes(app: FastifyInstance) {
                 params: deleteCardParamsSchema,
                 response: {
                     200: deleteCardResponseSchema,
-                    401: { type: 'object', properties: { message: { type: 'string' } } },
-                    403: { type: 'object', properties: { message: { type: 'string' } } },
-                    404: { type: 'object', properties: { message: { type: 'string' } } },
+                    401: errorResponseSchema,
+                    403: errorResponseSchema,
+                    404: errorResponseSchema,
                 },
             },
         },

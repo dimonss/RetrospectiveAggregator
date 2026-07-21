@@ -91,5 +91,11 @@ export const roomStatsResponseSchema = z.object({
     totalCards: z.number(),
 });
 
+export const errorResponseSchema = z.object({
+    message: z.string(),
+});
+
 export type RoomStatsResponse = z.infer<typeof roomStatsResponseSchema>;
+
+
 
