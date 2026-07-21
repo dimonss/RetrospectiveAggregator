@@ -337,14 +337,16 @@ export default function RetroPage() {
           <ThemeToggle />
 
           {/* Share */}
-          <button
-            id="btn-share-link"
-            className="btn-secondary"
-            onClick={handleCopyLink}
-          >
-            {copied ? <Check size={16} /> : <Copy size={16} />}
-            {copied ? 'Скопировано!' : 'Копировать ссылку'}
-          </button>
+          {isFacilitator && (
+            <button
+              id="btn-share-link"
+              className="btn-secondary"
+              onClick={handleCopyLink}
+            >
+              {copied ? <Check size={16} /> : <Copy size={16} />}
+              {copied ? 'Скопировано!' : 'Копировать ссылку'}
+            </button>
+          )}
 
           {/* Facilitator next stage */}
           {isFacilitator && (
