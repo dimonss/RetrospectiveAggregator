@@ -172,10 +172,36 @@
 }
 
 .real-auth-btn-wrap {
-  width: 320px;
+  width: 100%;
+  max-width: 320px;
   display: flex;
   justify-content: center;
   min-height: 40px;
 }
+
+@media (max-width: 480px) {
+  .login-page {
+    padding: var(--space-md);
+  }
+
+  .logo-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 22px;
+  }
+
+  .logo-text h1 {
+    font-size: 28px;
+  }
+
+  .logo-sub {
+    font-size: 12px;
+  }
+
+  .login-card {
+    padding: var(--space-md);
+  }
+}
+
 
 

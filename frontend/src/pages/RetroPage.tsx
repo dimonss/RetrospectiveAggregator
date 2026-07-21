@@ -102,6 +102,22 @@ export default function RetroPage() {
     }
   }, [id]);
 
+  const [activeTabId, setActiveTabId] = useState<string>('');
+
+  useEffect(() => {
+    if (room.columns.length > 0 && !activeTabId) {
+      setActiveTabId(room.columns[0].id);
+    }
+  }, [room.columns, activeTabId]);
+
+  const handleTabClick = (colId: string) => {
+    setActiveTabId(colId);
+    const el = document.getElementById(`column-${colId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+  };
+
   const isFacilitator = user?.id === room.facilitatorId;
   const currentStageIdx = STAGE_ORDER.indexOf(room.stage);
 
@@ -310,7 +326,7 @@ export default function RetroPage() {
               onClick={handleCopyLink}
             >
               {copied ? <Check size={16} /> : <Copy size={16} />}
-              {copied ? 'Скопировано!' : 'Копировать ссылку'}
+              <span>{copied ? 'Скопировано!' : 'Ссылка'}</span>
             </button>
           )}
 
@@ -321,9 +337,11 @@ export default function RetroPage() {
               className="btn-primary"
               onClick={handleNextStage}
             >
-              {currentStageIdx < STAGE_ORDER.length - 1
-                ? `Следующий этап`
-                : 'Завершить'}
+              <span className="btn-text-mobile-hide">
+                {currentStageIdx < STAGE_ORDER.length - 1
+                  ? `Далее`
+                  : 'Завершить'}
+              </span>
               <ArrowRight size={16} />
             </button>
           )}
@@ -343,6 +361,25 @@ export default function RetroPage() {
             <span>Осталось голосов: <strong>{votesLeft}</strong></span>
           </div>
         )}
+      </div>
+
+      {/* Mobile Column Tabs */}
+      <div className="mobile-column-tabs">
+        {room.columns.map(col => {
+          const colCardCount = room.cards.filter(c => c.columnId === col.id).length;
+          return (
+            <button
+              key={col.id}
+              className={`mobile-tab-btn ${activeTabId === col.id ? 'mobile-tab-btn--active' : ''}`}
+              style={{ '--tab-color': col.color } as React.CSSProperties}
+              onClick={() => handleTabClick(col.id)}
+            >
+              <span>{col.emoji}</span>
+              <span>{col.title}</span>
+              <span className="mobile-tab-count">{colCardCount}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Board */}

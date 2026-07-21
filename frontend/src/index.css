@@ -394,6 +394,18 @@ body::after {
   box-shadow: var(--shadow-lg), var(--shadow-glow);
 }
 
+@media (max-width: 600px) {
+  .modal-overlay {
+    padding: var(--space-sm);
+  }
+
+  .modal-content {
+    padding: var(--space-md);
+    border-radius: var(--radius-lg);
+    max-height: 92vh;
+  }
+}
+
 /* ─── Tag / Badge ───────────────────────────────────────────────────────────── */
 .badge {
   display: inline-flex;
@@ -459,3 +471,12 @@ body::after {
 [data-tooltip]:hover::after {
   opacity: 1;
 }
+
+@media (max-width: 600px) {
+  [data-tooltip]::after {
+    max-width: 80vw;
+    white-space: normal;
+    text-align: center;
+  }
+}
+

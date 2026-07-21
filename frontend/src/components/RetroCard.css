@@ -178,6 +178,14 @@
   opacity: 1;
 }
 
+@media (hover: none), (max-width: 768px) {
+  .card-action-btn {
+    opacity: 0.85;
+    width: 30px;
+    height: 30px;
+  }
+}
+
 .card-action-btn:hover {
   background: rgba(0,0,0,0.15);
   transform: scale(1.1);

@@ -70,6 +70,7 @@ export default function RetroColumn({
 
   return (
     <div
+      id={`column-${column.id}`}
       className={`retro-column ${isOver ? 'retro-column--over' : ''}`}
       style={{ '--col-color': column.color } as React.CSSProperties}
     >

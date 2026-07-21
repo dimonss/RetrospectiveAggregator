@@ -86,8 +86,28 @@
 @media (max-width: 600px) {
   .stage-connector {
     width: 24px;
+    margin-bottom: 16px;
   }
   .stage-label {
     font-size: 10px;
   }
 }
+
+@media (max-width: 480px) {
+  .stage-dot {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+  .stage-emoji {
+    font-size: 14px;
+  }
+  .stage-connector {
+    width: 14px;
+    margin-bottom: 14px;
+  }
+  .stage-label {
+    font-size: 9px;
+  }
+}
+

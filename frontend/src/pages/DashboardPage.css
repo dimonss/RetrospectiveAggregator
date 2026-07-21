@@ -367,14 +367,55 @@
 }
 
 @media (max-width: 768px) {
+  .dashboard-header {
+    padding: 0 var(--space-md);
+  }
+
+  .dashboard-main {
+    padding: var(--space-md);
+    gap: var(--space-xl);
+  }
+
+  .dashboard-hero {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .hero-text h1 {
+    font-size: 24px;
+  }
+
+  .create-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
   .dashboard-stats {
     grid-template-columns: repeat(2, 1fr);
   }
+
   .tips-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  .dashboard-hero {
-    flex-direction: column;
-    align-items: flex-start;
+}
+
+@media (max-width: 540px) {
+  .tips-grid {
+    grid-template-columns: 1fr;
   }
 }
+
+@media (max-width: 480px) {
+  .dashboard-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .stat-card {
+    padding: var(--space-md);
+  }
+
+  .dashboard-tips {
+    padding: var(--space-md);
+  }
+}
+

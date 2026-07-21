@@ -100,3 +100,14 @@
   color: var(--accent-secondary, #a78bfa);
 }
 
+@media (max-width: 480px) {
+  .add-card-form-btns {
+    flex-wrap: wrap;
+  }
+  .add-card-form-actions-right {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+
