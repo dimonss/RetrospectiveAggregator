@@ -70,6 +70,14 @@ export const createCardSchema = z.object({
     isAnonymous: z.boolean().optional(),
 });
 
+export const deleteCardParamsSchema = z.object({
+    cardId: z.string(),
+});
+
+export const deleteCardResponseSchema = z.object({
+    success: z.boolean(),
+});
+
 export type CreateRoomInput = z.infer<typeof createRoomSchema>;
 export type RoomResponse = z.infer<typeof roomResponseSchema>;
 export type RoomDetailResponse = z.infer<typeof roomDetailResponseSchema>;

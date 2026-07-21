@@ -8,6 +8,8 @@ import {
     roomDetailResponseSchema,
     createCardSchema,
     cardSchema,
+    deleteCardParamsSchema,
+    deleteCardResponseSchema,
 } from './rooms.schemas.js';
 import {
     createRoom,
@@ -133,8 +135,9 @@ export async function roomsRoutes(app: FastifyInstance) {
                 tags: ['Cards'],
                 description: 'Delete a card from a room',
                 security: [{ bearerAuth: [] }],
+                params: deleteCardParamsSchema,
                 response: {
-                    200: { type: 'object', properties: { success: { type: 'boolean' } } },
+                    200: deleteCardResponseSchema,
                     401: { type: 'object', properties: { message: { type: 'string' } } },
                     403: { type: 'object', properties: { message: { type: 'string' } } },
                     404: { type: 'object', properties: { message: { type: 'string' } } },
