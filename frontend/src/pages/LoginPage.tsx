@@ -1,7 +1,5 @@
 import { useState, useCallback } from 'react';
 import { useAuth, authUserToUser } from '../context/AuthContext';
-import { useDemo } from '../context/DemoContext';
-import { CURRENT_USER } from '../mocks/data';
 import { loginWithTelegram, loginWithGoogle } from '../api/auth';
 import { useGoogleAuth } from '../hooks/useGoogleAuth';
 import { useTelegramAuth } from '../hooks/useTelegramAuth';
@@ -10,8 +8,7 @@ import './LoginPage.css';
 
 export default function LoginPage() {
   const { login } = useAuth();
-  const { isDemoMode, toggleDemoMode } = useDemo();
-  const [isLoading, setIsLoading] = useState(false);
+  const [, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleGoogleCallback = useCallback(async (idToken: string) => {
@@ -45,24 +42,13 @@ export default function LoginPage() {
     containerId: 'google-real-btn',
     clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID,
     onSuccess: handleGoogleCallback,
-    disabled: isDemoMode,
   });
 
   useTelegramAuth({
     containerId: 'telegram-real-btn',
     botName: import.meta.env.VITE_TELEGRAM_BOT || 'ChalyshAuthBot',
     onSuccess: handleTelegramCallback,
-    disabled: isDemoMode,
   });
-
-  const handleGoogleDemoLogin = () => {
-    login(CURRENT_USER);
-  };
-
-  const handleTelegramDemoLogin = () => {
-    login({ ...CURRENT_USER, name: 'TG Пользователь', id: 'u-tg' });
-  };
-
 
   return (
     <div className="login-page">
@@ -106,77 +92,16 @@ export default function LoginPage() {
           <h2 className="login-card-title">Войти в платформу</h2>
           <p className="login-card-desc">Выберите удобный способ входа — профиль подтянется автоматически</p>
 
-          {/* Demo mode toggle */}
-          <div className="demo-toggle-container">
-            <div className="demo-toggle-row">
-              <div className="demo-toggle-info">
-                <span className="demo-toggle-icon">🔬</span>
-                <span className="demo-toggle-label">Демо-режим</span>
-              </div>
-              <button
-                id="btn-demo-toggle"
-                className={`demo-toggle-switch ${isDemoMode ? 'active' : ''}`}
-                onClick={toggleDemoMode}
-                role="switch"
-                aria-checked={isDemoMode}
-              >
-                <span className="demo-toggle-thumb" />
-              </button>
-            </div>
-            <p className="demo-toggle-hint">
-              {isDemoMode
-                ? 'Моковые данные, авторизация не требуется'
-                : 'Реальная авторизация через ChalyshAuth'}
-            </p>
-          </div>
-
           {error && (
             <div className="login-error">
               ⚠️ {error}
             </div>
           )}
 
-          {isDemoMode ? (
-            <div className="login-buttons">
-              <button
-                id="btn-google-login"
-                className="auth-btn auth-btn-google"
-                onClick={handleGoogleDemoLogin}
-                disabled={isLoading}
-              >
-                <svg width="20" height="20" viewBox="0 0 48 48" fill="none">
-                  <path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3l5.7-5.7C34 6.4 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.9z"/>
-                  <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 16 19 13 24 13c3.1 0 5.8 1.2 8 3l5.7-5.7C34 6.4 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/>
-                  <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.4 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8H6.4C9.8 37.4 16.3 44 24 44z"/>
-                  <path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.1-4 5.6l6.2 5.2C40.9 35.7 44 30.3 44 24c0-1.3-.1-2.6-.4-3.9z"/>
-                </svg>
-                Войти через Google (Демо)
-              </button>
-
-              <button
-                id="btn-telegram-login"
-                className="auth-btn auth-btn-telegram"
-                onClick={handleTelegramDemoLogin}
-                disabled={isLoading}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
-                  <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.19 13.267l-2.96-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.958.292z"/>
-                </svg>
-                Войти через Telegram (Демо)
-              </button>
-            </div>
-          ) : (
-            <div className="login-real-buttons-container">
-              <div id="google-real-btn" className="real-auth-btn-wrap" />
-              <div id="telegram-real-btn" className="real-auth-btn-wrap" />
-            </div>
-          )}
-
-          {isDemoMode && (
-            <p className="login-demo-note">
-              🎯 Демо-режим: авторизация не настоящая, все данные — моки
-            </p>
-          )}
+          <div className="login-real-buttons-container">
+            <div id="google-real-btn" className="real-auth-btn-wrap" />
+            <div id="telegram-real-btn" className="real-auth-btn-wrap" />
+          </div>
         </div>
 
         {/* Participant avatars preview */}

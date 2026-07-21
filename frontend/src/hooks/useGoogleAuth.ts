@@ -4,12 +4,12 @@ export function useGoogleAuth({
   containerId,
   clientId,
   onSuccess,
-  disabled,
+  disabled = false,
 }: {
   containerId: string;
   clientId: string | undefined;
   onSuccess: (idToken: string) => void;
-  disabled: boolean;
+  disabled?: boolean;
 }) {
   useEffect(() => {
     if (disabled || !clientId) return;

@@ -4,12 +4,12 @@ export function useTelegramAuth({
   containerId,
   botName,
   onSuccess,
-  disabled,
+  disabled = false,
 }: {
   containerId: string;
   botName: string;
   onSuccess: (user: any) => void;
-  disabled: boolean;
+  disabled?: boolean;
 }) {
   useEffect(() => {
     if (disabled || !botName) return;

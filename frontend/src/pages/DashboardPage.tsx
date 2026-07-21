@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Users, Clock, ChevronRight, LogOut, Zap, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useDemo } from '../context/DemoContext';
-import { MOCK_DASHBOARD_ROOMS, type TemplateId } from '../mocks/data';
+import { type TemplateId } from '../mocks/data';
 import { getRoomsApi, getRoomStatsApi, type RoomApiData, type RoomStatsApiData } from '../api/rooms';
 import TemplateModal from '../components/TemplateModal';
 import ThemeToggle from '../components/ThemeToggle';
@@ -40,53 +39,38 @@ function timeAgo(dateStr: string) {
 
 export default function DashboardPage() {
   const { user, logout } = useAuth();
-  const { isDemoMode } = useDemo();
   const navigate = useNavigate();
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [realRooms, setRealRooms] = useState<RoomApiData[]>([]);
   const [realStats, setRealStats] = useState<RoomStatsApiData | null>(null);
-  const [isLoadingRooms, setIsLoadingRooms] = useState(!isDemoMode);
-  const [isLoadingStats, setIsLoadingStats] = useState(!isDemoMode);
+  const [isLoadingRooms, setIsLoadingRooms] = useState(true);
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
 
   useEffect(() => {
-    if (!isDemoMode) {
-      setIsLoadingRooms(true);
-      setIsLoadingStats(true);
-      getRoomsApi()
-        .then(setRealRooms)
-        .catch((err) => console.error('Failed to load rooms:', err))
-        .finally(() => setIsLoadingRooms(false));
+    setIsLoadingRooms(true);
+    setIsLoadingStats(true);
+    getRoomsApi()
+      .then(setRealRooms)
+      .catch((err) => console.error('Failed to load rooms:', err))
+      .finally(() => setIsLoadingRooms(false));
 
-      getRoomStatsApi()
-        .then(setRealStats)
-        .catch((err) => console.error('Failed to load room stats:', err))
-        .finally(() => setIsLoadingStats(false));
-    }
-  }, [isDemoMode]);
+    getRoomStatsApi()
+      .then(setRealStats)
+      .catch((err) => console.error('Failed to load room stats:', err))
+      .finally(() => setIsLoadingStats(false));
+  }, []);
 
-  const displayRooms = isDemoMode
-    ? MOCK_DASHBOARD_ROOMS.map(r => ({
-        id: r.id,
-        name: r.name,
-        template: r.template,
-        stage: r.stage,
-        emoji: r.emoji,
-        participantCount: r.participantCount,
-        createdAt: r.createdAt,
-      }))
-    : realRooms.map(r => ({
-        id: r.id,
-        name: r.name,
-        template: r.template,
-        stage: r.stage as keyof typeof STAGE_LABELS,
-        emoji: TEMPLATE_EMOJIS[r.template as TemplateId] || '🔄',
-        participantCount: r.participantCount,
-        createdAt: r.createdAt,
-      }));
+  const displayRooms = realRooms.map(r => ({
+    id: r.id,
+    name: r.name,
+    template: r.template,
+    stage: r.stage as keyof typeof STAGE_LABELS,
+    emoji: TEMPLATE_EMOJIS[r.template as TemplateId] || '🔄',
+    participantCount: r.participantCount,
+    createdAt: r.createdAt,
+  }));
 
-  const displayStats = isDemoMode
-    ? { totalSessions: 3, totalActionItems: 12, totalParticipants: 22, totalCards: 64 }
-    : (realStats || { totalSessions: 0, totalActionItems: 0, totalParticipants: 0, totalCards: 0 });
+  const displayStats = realStats || { totalSessions: 0, totalActionItems: 0, totalParticipants: 0, totalCards: 0 };
 
   return (
     <div className="dashboard-page">
@@ -107,7 +91,6 @@ export default function DashboardPage() {
               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
             />
             <span className="user-name">{user?.name}</span>
-            {isDemoMode && <span className="badge badge-yellow" style={{ fontSize: '10px', padding: '1px 6px' }}>DEMO</span>}
           </div>
           <ThemeToggle />
           <button

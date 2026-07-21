@@ -18,7 +18,6 @@ import {
   ArrowLeft, Sparkles, Loader2
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useDemo } from '../context/DemoContext';
 import {
   MOCK_ROOM, MOCK_USERS, MAX_VOTES,
   type RetroRoom, type RetroCard, type Stage, type ActionItem,
@@ -58,11 +57,10 @@ const STAGE_HINTS: Record<Stage, { title: string; hint: string; emoji: string }>
 export default function RetroPage() {
   const { id } = useParams();
   const { user } = useAuth();
-  const { isDemoMode } = useDemo();
   const navigate = useNavigate();
 
   const [room, setRoom] = useState<RetroRoom>({ ...MOCK_ROOM });
-  const [isLoading, setIsLoading] = useState(!isDemoMode);
+  const [isLoading, setIsLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
 
@@ -71,7 +69,7 @@ export default function RetroPage() {
   }));
 
   useEffect(() => {
-    if (!isDemoMode && id) {
+    if (id) {
       setIsLoading(true);
       getRoomApi(id)
         .then((data) => {
@@ -102,7 +100,7 @@ export default function RetroPage() {
         .catch((err) => console.error('Error fetching room:', err))
         .finally(() => setIsLoading(false));
     }
-  }, [id, isDemoMode]);
+  }, [id]);
 
   const isFacilitator = user?.id === room.facilitatorId;
   const currentStageIdx = STAGE_ORDER.indexOf(room.stage);
@@ -116,19 +114,7 @@ export default function RetroPage() {
   // ─── Handlers ────────────────────────────────────────────────────────────────
 
   const handleAddCard = async (text: string, columnId: string, isAnonymous: boolean) => {
-    if (isDemoMode || !id) {
-      const newCard: RetroCard = {
-        id: `c-${Date.now()}`,
-        text,
-        authorId: user?.id || 'u1',
-        columnId,
-        votes: [],
-        isAnonymous,
-        actionItems: [],
-      };
-      setRoom(prev => ({ ...prev, cards: [...prev.cards, newCard] }));
-      return;
-    }
+    if (!id) return;
 
     try {
       const createdCard = await addCardApi(id, columnId, text, isAnonymous);
@@ -149,11 +135,6 @@ export default function RetroPage() {
   };
 
   const handleDeleteCard = async (cardId: string) => {
-    if (isDemoMode) {
-      setRoom(prev => ({ ...prev, cards: prev.cards.filter(c => c.id !== cardId) }));
-      return;
-    }
-
     try {
       await deleteCardApi(cardId);
       setRoom(prev => ({ ...prev, cards: prev.cards.filter(c => c.id !== cardId) }));

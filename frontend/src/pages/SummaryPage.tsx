@@ -1,12 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Check, Copy, ArrowLeft, CheckSquare } from 'lucide-react';
-import { MOCK_ROOM, MOCK_USERS, type ActionItem } from '../mocks/data';
+import { Check, Copy, ArrowLeft, CheckSquare, Loader2 } from 'lucide-react';
+import { MOCK_ROOM, MOCK_USERS, type ActionItem, type RetroRoom } from '../mocks/data';
+import { getRoomApi } from '../api/rooms';
 import ThemeToggle from '../components/ThemeToggle';
 import './SummaryPage.css';
 
-// Build a demo summary with action items from mock data
-function buildSummaryData(room: typeof MOCK_ROOM) {
+function buildSummaryData(room: RetroRoom) {
   const allActionItems: Array<ActionItem & { cardText: string; cardId: string }> = [];
 
   room.cards.forEach(card => {
@@ -15,21 +15,11 @@ function buildSummaryData(room: typeof MOCK_ROOM) {
     });
   });
 
-  // Add demo action items if none exist
-  if (allActionItems.length === 0) {
-    return [
-      { id: 'ai-demo-1', text: 'Настроить автоматический код-ревью с таймлайном 24ч', assigneeId: 'u1', done: false, cardText: 'Слишком долгий код-ревью', cardId: 'c4' },
-      { id: 'ai-demo-2', text: 'Провести встречу с продуктом для уточнения требований', assigneeId: 'u2', done: false, cardText: 'Нет четких требований от продукта', cardId: 'c5' },
-      { id: 'ai-demo-3', text: 'Настроить CI/CD для автоматической сборки', assigneeId: 'u3', done: false, cardText: 'Настроить автоматическую сборку', cardId: 'c7' },
-      { id: 'ai-demo-4', text: 'Организовать воркшоп по DDD на следующей неделе', assigneeId: 'u1', done: false, cardText: 'Провести воркшоп по DDD', cardId: 'c8' },
-    ];
-  }
-
   return allActionItems;
 }
 
-function generateMarkdown(room: typeof MOCK_ROOM, items: ReturnType<typeof buildSummaryData>) {
-  const date = new Date().toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+function generateMarkdown(room: RetroRoom, items: ReturnType<typeof buildSummaryData>) {
+  const date = new Date(room.createdAt || Date.now()).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
   const lines = [
     `# 🔄 Ретроспектива: ${room.name}`,
     `*${date}*`,
@@ -37,7 +27,7 @@ function generateMarkdown(room: typeof MOCK_ROOM, items: ReturnType<typeof build
     '## 📋 Action Items',
     '',
     ...items.map(ai => {
-      const assignee = MOCK_USERS.find(u => u.id === ai.assigneeId);
+      const assignee = (room.participants || MOCK_USERS).find(u => u.id === ai.assigneeId);
       return `- [ ] ${ai.text} *(${assignee?.name || 'Не назначен'})*`;
     }),
     '',
@@ -51,8 +41,45 @@ export default function SummaryPage() {
   const { id } = useParams();
   const [copied, setCopied] = useState(false);
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
+  const [room, setRoom] = useState<RetroRoom>(MOCK_ROOM);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const room = MOCK_ROOM;
+  useEffect(() => {
+    if (id) {
+      setIsLoading(true);
+      getRoomApi(id)
+        .then((data) => {
+          setRoom({
+            id: data.id,
+            name: data.name,
+            template: data.template,
+            stage: data.stage,
+            facilitatorId: data.facilitatorId,
+            participantIds: data.participantIds,
+            participants: data.participants || [],
+            anonymousMode: data.anonymousMode,
+            createdAt: data.createdAt,
+            columns: data.columns,
+            clusters: [],
+            cards: data.cards.map((c) => ({
+              id: c.id,
+              text: c.text,
+              authorId: c.authorId,
+              columnId: c.columnId,
+              votes: c.votes,
+              clusterId: c.clusterId || undefined,
+              isAnonymous: c.isAnonymous,
+              actionItems: [],
+            })),
+          });
+        })
+        .catch((err) => console.error('Error fetching room summary:', err))
+        .finally(() => setIsLoading(false));
+    } else {
+      setIsLoading(false);
+    }
+  }, [id]);
+
   const actionItems = buildSummaryData(room);
 
   const topCards = [...room.cards]
@@ -73,6 +100,15 @@ export default function SummaryPage() {
       return next;
     });
   };
+
+  if (isLoading) {
+    return (
+      <div className="summary-page-loading" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', gap: '16px' }}>
+        <Loader2 size={28} className="animate-spin loader-svg" style={{ animation: 'spin 1s linear infinite' }} />
+        <span>Загрузка итогов...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="summary-page">

@@ -119,7 +119,7 @@ export const TEMPLATES: Template[] = [
 // ─── Mock Room ────────────────────────────────────────────────────────────────
 
 export const MOCK_ROOM: RetroRoom = {
-  id: 'room-demo-123',
+    id: 'room-123',
   name: 'Sprint 42 Ретроспектива',
   template: 'went-well',
   stage: 'brainstorming',
@@ -150,7 +150,7 @@ export const MOCK_ROOM: RetroRoom = {
 
 export const MOCK_DASHBOARD_ROOMS = [
   {
-    id: 'room-demo-123',
+      id: 'room-123',
     name: 'Sprint 42 Ретроспектива',
     template: 'went-well' as TemplateId,
     stage: 'brainstorming' as Stage,

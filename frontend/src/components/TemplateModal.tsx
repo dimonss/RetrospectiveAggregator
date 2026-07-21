@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, ArrowRight, Loader2 } from 'lucide-react';
-import { TEMPLATES, MOCK_ROOM, type TemplateId } from '../mocks/data';
-import { useDemo } from '../context/DemoContext';
+import { TEMPLATES, type TemplateId } from '../mocks/data';
 import { createRoomApi } from '../api/rooms';
 import './TemplateModal.css';
 
@@ -12,19 +11,12 @@ interface Props {
 
 export default function TemplateModal({ onClose }: Props) {
   const navigate = useNavigate();
-  const { isDemoMode } = useDemo();
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateId>('went-well');
   const [roomName, setRoomName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleCreate = async () => {
-    if (isDemoMode) {
-      navigate(`/retro/${MOCK_ROOM.id}`);
-      onClose();
-      return;
-    }
-
     const finalName = roomName.trim() || `Ретроспектива ${new Date().toLocaleDateString('ru-RU')}`;
     setIsLoading(true);
     setError(null);
@@ -130,12 +122,6 @@ export default function TemplateModal({ onClose }: Props) {
             )}
           </button>
         </div>
-
-        {isDemoMode && (
-          <div className="modal-footer-note">
-            🎯 В демо-режиме откроется готовая сессия с предзаполненными карточками
-          </div>
-        )}
       </div>
     </div>
   );
