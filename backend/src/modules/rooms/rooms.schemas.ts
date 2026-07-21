@@ -84,3 +84,12 @@ export type RoomDetailResponse = z.infer<typeof roomDetailResponseSchema>;
 export type CreateCardInput = z.infer<typeof createCardSchema>;
 export type CardResponse = z.infer<typeof cardSchema>;
 
+export const roomStatsResponseSchema = z.object({
+    totalSessions: z.number(),
+    totalActionItems: z.number(),
+    totalParticipants: z.number(),
+    totalCards: z.number(),
+});
+
+export type RoomStatsResponse = z.infer<typeof roomStatsResponseSchema>;
+

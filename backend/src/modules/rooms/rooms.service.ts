@@ -1,7 +1,7 @@
 import { eq, count } from 'drizzle-orm';
 import { getDb } from '../../db/connection.js';
 import { retroRooms, retroParticipants, retroCards, retroVotes, userProfiles } from '../../db/schema.js';
-import type { CreateRoomInput, RoomResponse, RoomDetailResponse, CardResponse, CreateCardInput } from './rooms.schemas.js';
+import type { CreateRoomInput, RoomResponse, RoomDetailResponse, CardResponse, CreateCardInput, RoomStatsResponse } from './rooms.schemas.js';
 
 function buildInviteLink(roomId: string): string {
     return `https://chalysh.pro/dev/retro/${roomId}`;
@@ -281,4 +281,64 @@ export async function deleteCardFromRoom(
 
     db.delete(retroCards).where(eq(retroCards.id, cardId)).run();
     return true;
+}
+
+export async function getUserStats(userId: string): Promise<RoomStatsResponse> {
+    const db = getDb();
+
+    const userParticipations = db
+        .select({ roomId: retroParticipants.roomId })
+        .from(retroParticipants)
+        .where(eq(retroParticipants.userId, userId))
+        .all();
+
+    const roomIds = userParticipations.map(p => p.roomId);
+    if (roomIds.length === 0) {
+        return {
+            totalSessions: 0,
+            totalActionItems: 0,
+            totalParticipants: 0,
+            totalCards: 0,
+        };
+    }
+
+    const totalSessions = roomIds.length;
+
+    // Get all rooms the user participates in to check templates
+    const rooms = db
+        .select()
+        .from(retroRooms)
+        .all()
+        .filter(room => roomIds.includes(room.id));
+
+    const wentWellRoomIds = rooms.filter(r => r.template === 'went-well').map(r => r.id);
+
+    // Unique participants count across user's rooms
+    const participants = db
+        .select({ roomId: retroParticipants.roomId, userId: retroParticipants.userId })
+        .from(retroParticipants)
+        .all()
+        .filter(p => roomIds.includes(p.roomId));
+
+    const uniqueParticipantIds = new Set(participants.map(p => p.userId));
+    const totalParticipants = uniqueParticipantIds.size;
+
+    // Cards stats across user's rooms
+    const allCards = db
+        .select()
+        .from(retroCards)
+        .all()
+        .filter(c => roomIds.includes(c.roomId));
+
+    const totalCards = allCards.length;
+    const totalActionItems = allCards.filter(
+        c => wentWellRoomIds.includes(c.roomId) && c.columnId === 'col-3'
+    ).length;
+
+    return {
+        totalSessions,
+        totalActionItems,
+        totalParticipants,
+        totalCards,
+    };
 }

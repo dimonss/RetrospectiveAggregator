@@ -6,6 +6,7 @@ import {
     roomResponseSchema,
     roomListResponseSchema,
     roomDetailResponseSchema,
+    roomStatsResponseSchema,
     createCardSchema,
     cardSchema,
     deleteCardParamsSchema,
@@ -15,6 +16,7 @@ import {
     createRoom,
     getUserRooms,
     getRoomById,
+    getUserStats,
     addCardToRoom,
     deleteCardFromRoom,
 } from './rooms.service.js';
@@ -64,6 +66,28 @@ export async function roomsRoutes(app: FastifyInstance) {
             const user = request.currentUser!;
             const rooms = await getUserRooms(user.id);
             return reply.send(rooms);
+        },
+    );
+
+    // GET /rooms/stats - Get statistics for current user
+    typedApp.get(
+        '/rooms/stats',
+        {
+            preHandler: [authenticate],
+            schema: {
+                tags: ['Rooms'],
+                description: 'Get room statistics and metrics for the authenticated user',
+                security: [{ bearerAuth: [] }],
+                response: {
+                    200: roomStatsResponseSchema,
+                    401: { type: 'object', properties: { message: { type: 'string' } } },
+                },
+            },
+        },
+        async (request, reply) => {
+            const user = request.currentUser!;
+            const stats = await getUserStats(user.id);
+            return reply.send(stats);
         },
     );
 
