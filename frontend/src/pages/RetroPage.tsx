@@ -22,7 +22,7 @@ import {
   MOCK_ROOM, MOCK_USERS, MAX_VOTES,
   type RetroRoom, type RetroCard, type Stage, type ActionItem,
 } from '../mocks/data';
-import { getRoomApi, addCardApi, deleteCardApi } from '../api/rooms';
+import { getRoomApi, addCardApi, deleteCardApi, updateCardPositionsApi, updateRoomStageApi } from '../api/rooms';
 import StageIndicator from '../components/StageIndicator';
 import RetroColumn from '../components/RetroColumn';
 import RetroCardComponent from '../components/RetroCard';
@@ -40,7 +40,7 @@ const STAGE_HINTS: Record<Stage, { title: string; hint: string; emoji: string }>
   grouping: {
     emoji: '🗂️',
     title: 'Группировка',
-    hint: 'Перетащите похожие карточки друг на друга, чтобы объединить их в кластеры.',
+    hint: 'Перетащите похожие карточки друг на друга или поменяйте порядок, чтобы структурировать темы.',
   },
   voting: {
     emoji: '🗳️',
@@ -101,6 +101,43 @@ export default function RetroPage() {
         .finally(() => setIsLoading(false));
     }
   }, [id]);
+
+  // Polling for live room updates
+  useEffect(() => {
+    if (!id) return;
+
+    const interval = setInterval(() => {
+      getRoomApi(id)
+        .then((data) => {
+          setRoom((prev) => {
+            if (activeCardId) return prev; // Do not interrupt drag operation
+            return {
+              ...prev,
+              name: data.name || prev.name,
+              template: data.template || prev.template,
+              stage: data.stage,
+              facilitatorId: data.facilitatorId || prev.facilitatorId,
+              columns: data.columns && data.columns.length > 0 ? data.columns : prev.columns,
+              participants: data.participants || [],
+              participantIds: data.participantIds,
+              cards: data.cards.map((c) => ({
+                id: c.id,
+                text: c.text,
+                authorId: c.authorId,
+                columnId: c.columnId,
+                votes: c.votes,
+                clusterId: c.clusterId || undefined,
+                isAnonymous: c.isAnonymous,
+                actionItems: [],
+              })),
+            };
+          });
+        })
+        .catch((err) => console.error('Error polling room:', err));
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [id, activeCardId]);
 
   const [activeTabId, setActiveTabId] = useState<string>('');
 
@@ -191,7 +228,11 @@ export default function RetroPage() {
 
   const handleNextStage = () => {
     if (currentStageIdx < STAGE_ORDER.length - 1) {
-      setRoom(prev => ({ ...prev, stage: STAGE_ORDER[currentStageIdx + 1] }));
+      const nextStage = STAGE_ORDER[currentStageIdx + 1];
+      setRoom(prev => ({ ...prev, stage: nextStage }));
+      if (id) {
+        updateRoomStageApi(id, nextStage).catch(console.error);
+      }
     } else {
       navigate(`/retro/${id}/summary`);
     }
@@ -199,6 +240,9 @@ export default function RetroPage() {
 
   const handleStageChange = (stage: Stage) => {
     setRoom(prev => ({ ...prev, stage }));
+    if (id) {
+      updateRoomStageApi(id, stage).catch(console.error);
+    }
   };
 
   const handleCopyLink = () => {
@@ -207,13 +251,19 @@ export default function RetroPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // ─── DnD ─────────────────────────────────────────────────────────────────────
+  // ─── DnD (Facilitator only in grouping stage) ───────────────────────────────
 
   const handleDragStart = (event: DragStartEvent) => {
+    if (!isFacilitator || room.stage !== 'grouping') return;
     setActiveCardId(event.active.id as string);
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
+    if (!isFacilitator || room.stage !== 'grouping') {
+      setActiveCardId(null);
+      return;
+    }
+
     const { active, over } = event;
     setActiveCardId(null);
 
@@ -222,40 +272,59 @@ export default function RetroPage() {
     const activeCard = room.cards.find(c => c.id === active.id);
     if (!activeCard) return;
 
+    let updatedCards = [...room.cards];
+
     // If dropped on a column (different from card's column), move there
     const targetColumn = room.columns.find(col => col.id === over.id);
     if (targetColumn && activeCard.columnId !== targetColumn.id) {
-      setRoom(prev => ({
-        ...prev,
-        cards: prev.cards.map(c =>
-          c.id === active.id ? { ...c, columnId: targetColumn.id } : c
-        ),
-      }));
-      return;
+      updatedCards = updatedCards.map(c =>
+        c.id === active.id ? { ...c, columnId: targetColumn.id } : c
+      );
+    } else {
+      // Reorder within column
+      const overCard = room.cards.find(c => c.id === over.id);
+      if (overCard && activeCard.columnId === overCard.columnId) {
+        const colCards = room.cards.filter(c => c.columnId === activeCard.columnId);
+        const oldIdx = colCards.findIndex(c => c.id === active.id);
+        const newIdx = colCards.findIndex(c => c.id === over.id);
+        const reordered = arrayMove(colCards, oldIdx, newIdx);
+
+        updatedCards = [
+          ...room.cards.filter(c => c.columnId !== activeCard.columnId),
+          ...reordered,
+        ];
+      }
     }
 
-    // Reorder within column
-    const overCard = room.cards.find(c => c.id === over.id);
-    if (overCard && activeCard.columnId === overCard.columnId) {
-      const colCards = room.cards.filter(c => c.columnId === activeCard.columnId);
-      const oldIdx = colCards.findIndex(c => c.id === active.id);
-      const newIdx = colCards.findIndex(c => c.id === over.id);
-      const reordered = arrayMove(colCards, oldIdx, newIdx);
+    setRoom(prev => ({ ...prev, cards: updatedCards }));
 
-      setRoom(prev => ({
-        ...prev,
-        cards: [
-          ...prev.cards.filter(c => c.columnId !== activeCard.columnId),
-          ...reordered,
-        ],
-      }));
+    // Save card positions and column assignments to backend
+    if (id) {
+      const positionsToUpdate: Array<{ id: string; columnId: string; position: number }> = [];
+      for (const col of room.columns) {
+        const colCards = updatedCards.filter(c => c.columnId === col.id);
+        colCards.forEach((c, idx) => {
+          positionsToUpdate.push({
+            id: c.id,
+            columnId: c.columnId,
+            position: idx,
+          });
+        });
+      }
+      updateCardPositionsApi(id, positionsToUpdate).catch(console.error);
     }
   };
 
   const activeCard = activeCardId ? room.cards.find(c => c.id === activeCardId) : null;
   const activeColumn = activeCard ? room.columns.find(c => c.id === activeCard.columnId) : null;
 
-  const hint = STAGE_HINTS[room.stage] || STAGE_HINTS.brainstorming;
+  const hint = !isFacilitator && room.stage === 'grouping'
+    ? {
+        emoji: '⏳',
+        title: 'Группировка карточек',
+        hint: 'Создатель комнаты формирует темы и группирует карточки. Пожалуйста, подождите...',
+      }
+    : (STAGE_HINTS[room.stage] || STAGE_HINTS.brainstorming);
 
   if (isLoading) {
     return (
@@ -399,6 +468,7 @@ export default function RetroPage() {
                   column={column}
                   cards={colCards}
                   stage={room.stage}
+                  isFacilitator={isFacilitator}
                   currentUserId={user?.id || 'u1'}
                   anonymousMode={room.anonymousMode}
                   userVotesLeft={votesLeft}

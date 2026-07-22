@@ -10,6 +10,14 @@ export function initDb(dbPath: string) {
     mkdirSync(dirname(dbPath), { recursive: true });
     const sqlite = new Database(dbPath);
     sqlite.pragma('journal_mode = WAL');
+
+    // Ensure position column exists on retro_cards for existing databases
+    try {
+        sqlite.exec('ALTER TABLE `retro_cards` ADD COLUMN `position` integer DEFAULT 0 NOT NULL');
+    } catch {
+        // Column already exists or table not created yet
+    }
+
     db = drizzle(sqlite, { schema });
     return db;
 }

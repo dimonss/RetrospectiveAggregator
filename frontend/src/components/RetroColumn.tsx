@@ -16,6 +16,7 @@ import './RetroColumn.css';
 interface SortableCardProps {
   card: RetroCard;
   stage: Stage;
+  isFacilitator: boolean;
   currentUserId: string;
   userVotesLeft: number;
   columnColor: string;
@@ -27,8 +28,10 @@ interface SortableCardProps {
 }
 
 function SortableCard(props: SortableCardProps) {
+  const isDraggable = props.isFacilitator && props.stage === 'grouping';
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: props.card.id,
+    disabled: !isDraggable,
   });
 
   const style = {
@@ -37,7 +40,7 @@ function SortableCard(props: SortableCardProps) {
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...(props.stage === 'grouping' ? { ...attributes, ...listeners } : {})}>
+    <div ref={setNodeRef} style={style} {...(isDraggable ? { ...attributes, ...listeners } : {})}>
       <RetroCardComponent {...props} isDragging={isDragging} />
     </div>
   );
@@ -47,6 +50,7 @@ interface Props {
   column: RetroColumn;
   cards: RetroCard[];
   stage: Stage;
+  isFacilitator: boolean;
   currentUserId: string;
   anonymousMode: boolean;
   userVotesLeft: number;
@@ -58,7 +62,7 @@ interface Props {
 }
 
 export default function RetroColumn({
-  column, cards, stage, currentUserId, anonymousMode,
+  column, cards, stage, isFacilitator, currentUserId, anonymousMode,
   userVotesLeft, participants, onAddCard, onVote, onDeleteCard, onAddActionItem
 }: Props) {
   const { setNodeRef, isOver } = useDroppable({ id: column.id });
@@ -94,6 +98,7 @@ export default function RetroColumn({
               key={card.id}
               card={card}
               stage={stage}
+              isFacilitator={isFacilitator}
               currentUserId={currentUserId}
               userVotesLeft={userVotesLeft}
               columnColor={column.color}

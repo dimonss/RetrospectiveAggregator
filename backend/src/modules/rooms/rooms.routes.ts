@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
+import { z } from 'zod';
 import { authenticate } from '../../plugins/auth.middleware.js';
 import {
     createRoomSchema,
@@ -11,6 +12,8 @@ import {
     cardSchema,
     deleteCardParamsSchema,
     deleteCardResponseSchema,
+    updateCardPositionsSchema,
+    updateStageSchema,
     errorResponseSchema,
 } from './rooms.schemas.js';
 import {
@@ -20,6 +23,8 @@ import {
     getUserStats,
     addCardToRoom,
     deleteCardFromRoom,
+    updateCardPositions,
+    updateRoomStage,
 } from './rooms.service.js';
 
 export async function roomsRoutes(app: FastifyInstance) {
@@ -121,6 +126,37 @@ export async function roomsRoutes(app: FastifyInstance) {
         },
     );
 
+    // PATCH /rooms/:id/stage - Update room stage
+    typedApp.patch(
+        '/rooms/:id/stage',
+        {
+            preHandler: [authenticate],
+            schema: {
+                tags: ['Rooms'],
+                description: 'Update retrospective room stage (facilitator only)',
+                security: [{ bearerAuth: [] }],
+                body: updateStageSchema,
+                response: {
+                    200: z.object({ success: z.boolean() }),
+                    401: errorResponseSchema,
+                    403: errorResponseSchema,
+                    404: errorResponseSchema,
+                },
+            },
+        },
+        async (request, reply) => {
+            const user = request.currentUser!;
+            const { id } = request.params as { id: string };
+            try {
+                await updateRoomStage(id, user, request.body.stage);
+                return reply.send({ success: true });
+            } catch (err: unknown) {
+                const message = err instanceof Error ? err.message : 'Forbidden';
+                return reply.status(403).send({ message });
+            }
+        },
+    );
+
     // POST /rooms/:id/cards - Add card to room
     typedApp.post(
         '/rooms/:id/cards',
@@ -147,6 +183,37 @@ export async function roomsRoutes(app: FastifyInstance) {
             } catch (err: unknown) {
                 const message = err instanceof Error ? err.message : 'Error adding card';
                 return reply.status(404).send({ message });
+            }
+        },
+    );
+
+    // PATCH /rooms/:id/cards/positions - Update card positions and columns
+    typedApp.patch(
+        '/rooms/:id/cards/positions',
+        {
+            preHandler: [authenticate],
+            schema: {
+                tags: ['Cards'],
+                description: 'Update card positions and column assignments (facilitator only)',
+                security: [{ bearerAuth: [] }],
+                body: updateCardPositionsSchema,
+                response: {
+                    200: z.object({ success: z.boolean() }),
+                    401: errorResponseSchema,
+                    403: errorResponseSchema,
+                    404: errorResponseSchema,
+                },
+            },
+        },
+        async (request, reply) => {
+            const user = request.currentUser!;
+            const { id } = request.params as { id: string };
+            try {
+                await updateCardPositions(id, user, request.body);
+                return reply.send({ success: true });
+            } catch (err: unknown) {
+                const message = err instanceof Error ? err.message : 'Forbidden';
+                return reply.status(403).send({ message });
             }
         },
     );

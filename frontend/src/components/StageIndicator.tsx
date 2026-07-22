@@ -9,14 +9,21 @@ interface Props {
   onStageChange?: (stage: Stage) => void;
 }
 
-const stageOrder: Stage[] = ['brainstorming', 'grouping', 'voting', 'discussion'];
-
 export default function StageIndicator({ currentStage, isFacilitator, onStageChange }: Props) {
-  const currentIdx = stageOrder.indexOf(currentStage);
+  const visibleStages = isFacilitator
+    ? STAGES
+    : STAGES.filter(s => s.id !== 'grouping');
+
+  const stageOrder: Stage[] = visibleStages.map(s => s.id);
+  let currentIdx = stageOrder.indexOf(currentStage);
+
+  if (!isFacilitator && currentStage === 'grouping') {
+    currentIdx = 0; // Highlight ideas step while facilitator is grouping
+  }
 
   return (
     <div className="stage-indicator">
-      {STAGES.map((stage, idx) => {
+      {visibleStages.map((stage, idx) => {
         const isCompleted = idx < currentIdx;
         const isCurrent = idx === currentIdx;
         const isClickable = isFacilitator && idx !== currentIdx;
@@ -45,7 +52,7 @@ export default function StageIndicator({ currentStage, isFacilitator, onStageCha
               <span className="stage-label">{stage.label}</span>
             </div>
 
-            {idx < STAGES.length - 1 && (
+            {idx < visibleStages.length - 1 && (
               <div className={`stage-connector ${idx < currentIdx ? 'stage-connector--filled' : ''}`} />
             )}
           </React.Fragment>

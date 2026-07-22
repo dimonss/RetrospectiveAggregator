@@ -25,6 +25,7 @@ export interface CardApiData {
     text: string;
     authorId: string;
     columnId: string;
+    position?: number;
     votes: string[];
     clusterId?: string | null;
     isAnonymous: boolean;
@@ -79,6 +80,26 @@ export async function addCardApi(roomId: string, columnId: string, text: string,
 export async function deleteCardApi(cardId: string): Promise<{ success: boolean }> {
     return apiRequest<{ success: boolean }>(`/rooms/cards/${cardId}`, {
         method: 'DELETE',
+    });
+}
+
+export async function updateCardPositionsApi(
+    roomId: string,
+    positions: Array<{ id: string; columnId: string; position: number }>
+): Promise<{ success: boolean }> {
+    return apiRequest<{ success: boolean }>(`/rooms/${roomId}/cards/positions`, {
+        method: 'PATCH',
+        body: JSON.stringify({ positions }),
+    });
+}
+
+export async function updateRoomStageApi(
+    roomId: string,
+    stage: 'brainstorming' | 'grouping' | 'voting' | 'discussion'
+): Promise<{ success: boolean }> {
+    return apiRequest<{ success: boolean }>(`/rooms/${roomId}/stage`, {
+        method: 'PATCH',
+        body: JSON.stringify({ stage }),
     });
 }
 

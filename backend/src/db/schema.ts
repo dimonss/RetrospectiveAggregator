@@ -1,4 +1,4 @@
-import { sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 import { randomUUID } from 'node:crypto';
 
 export const userProfiles = sqliteTable('user_profiles', {
@@ -42,6 +42,7 @@ export const retroCards = sqliteTable('retro_cards', {
     authorId: text('author_id').notNull().references(() => userProfiles.id, { onDelete: 'cascade' }),
     clusterId: text('cluster_id'),
     isAnonymous: text('is_anonymous').notNull().$default(() => 'false'),
+    position: integer('position').notNull().default(0),
     createdAt: text('created_at').$defaultFn(() => new Date().toISOString()),
     updatedAt: text('updated_at').$defaultFn(() => new Date().toISOString()),
 });

@@ -1,7 +1,7 @@
 import { eq, count } from 'drizzle-orm';
 import { getDb } from '../../db/connection.js';
 import { retroRooms, retroParticipants, retroCards, retroVotes, userProfiles } from '../../db/schema.js';
-import type { CreateRoomInput, RoomResponse, RoomDetailResponse, CardResponse, CreateCardInput, RoomStatsResponse } from './rooms.schemas.js';
+import type { CreateRoomInput, RoomResponse, RoomDetailResponse, CardResponse, CreateCardInput, RoomStatsResponse, UpdateCardPositionsInput } from './rooms.schemas.js';
 
 function buildInviteLink(roomId: string): string {
     return `https://chalysh.pro/dev/retro/${roomId}`;
@@ -154,12 +154,13 @@ export async function getRoomById(
         });
     }
 
-    // Get cards
+    // Get cards sorted by position ASC, createdAt ASC
     const dbCards = db
         .select()
         .from(retroCards)
         .where(eq(retroCards.roomId, roomId))
-        .all();
+        .all()
+        .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
 
     const cards: CardResponse[] = [];
     for (const card of dbCards) {
@@ -175,6 +176,7 @@ export async function getRoomById(
             text: card.text,
             authorId: card.authorId,
             columnId: card.columnId,
+            position: card.position ?? 0,
             votes,
             clusterId: card.clusterId,
             isAnonymous: card.isAnonymous === 'true',
@@ -230,6 +232,13 @@ export async function addCardToRoom(
         throw new Error('Room not found');
     }
 
+    const colCards = db
+        .select()
+        .from(retroCards)
+        .where(eq(retroCards.roomId, room.id))
+        .all()
+        .filter(c => c.columnId === input.columnId);
+
     const createdCard = db
         .insert(retroCards)
         .values({
@@ -238,6 +247,7 @@ export async function addCardToRoom(
             text: input.text,
             authorId: userProfile.id,
             isAnonymous: String(input.isAnonymous ?? (room.anonymousMode === 'true')),
+            position: colCards.length,
         })
         .returning()
         .get();
@@ -247,11 +257,79 @@ export async function addCardToRoom(
         text: createdCard.text,
         authorId: createdCard.authorId,
         columnId: createdCard.columnId,
+        position: createdCard.position ?? 0,
         votes: [],
         clusterId: createdCard.clusterId,
         isAnonymous: createdCard.isAnonymous === 'true',
         createdAt: createdCard.createdAt || new Date().toISOString(),
     };
+}
+
+export async function updateCardPositions(
+    roomId: string,
+    userProfile: typeof userProfiles.$inferSelect,
+    input: UpdateCardPositionsInput,
+): Promise<boolean> {
+    const db = getDb();
+
+    const room = db
+        .select()
+        .from(retroRooms)
+        .where(eq(retroRooms.id, roomId))
+        .get();
+
+    if (!room) {
+        throw new Error('Room not found');
+    }
+
+    if (room.facilitatorId !== userProfile.id) {
+        throw new Error('Forbidden: Only facilitator can update card positions');
+    }
+
+    for (const item of input.positions) {
+        db.update(retroCards)
+            .set({
+                columnId: item.columnId,
+                position: item.position,
+                updatedAt: new Date().toISOString(),
+            })
+            .where(eq(retroCards.id, item.id))
+            .run();
+    }
+
+    return true;
+}
+
+export async function updateRoomStage(
+    roomId: string,
+    userProfile: typeof userProfiles.$inferSelect,
+    stage: 'brainstorming' | 'grouping' | 'voting' | 'discussion',
+): Promise<boolean> {
+    const db = getDb();
+
+    const room = db
+        .select()
+        .from(retroRooms)
+        .where(eq(retroRooms.id, roomId))
+        .get();
+
+    if (!room) {
+        throw new Error('Room not found');
+    }
+
+    if (room.facilitatorId !== userProfile.id) {
+        throw new Error('Forbidden: Only facilitator can change room stage');
+    }
+
+    db.update(retroRooms)
+        .set({
+            stage,
+            updatedAt: new Date().toISOString(),
+        })
+        .where(eq(retroRooms.id, roomId))
+        .run();
+
+    return true;
 }
 
 export async function deleteCardFromRoom(

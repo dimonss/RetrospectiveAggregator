@@ -27,6 +27,7 @@ export const cardSchema = z.object({
     text: z.string(),
     authorId: z.string(),
     columnId: z.string(),
+    position: z.number().default(0),
     votes: z.array(z.string()),
     clusterId: z.string().optional().nullable(),
     isAnonymous: z.boolean(),
@@ -70,6 +71,20 @@ export const createCardSchema = z.object({
     isAnonymous: z.boolean().optional(),
 });
 
+export const cardPositionItemSchema = z.object({
+    id: z.string(),
+    columnId: z.string(),
+    position: z.number(),
+});
+
+export const updateCardPositionsSchema = z.object({
+    positions: z.array(cardPositionItemSchema),
+});
+
+export const updateStageSchema = z.object({
+    stage: z.enum(['brainstorming', 'grouping', 'voting', 'discussion']),
+});
+
 export const deleteCardParamsSchema = z.object({
     cardId: z.string(),
 });
@@ -83,6 +98,8 @@ export type RoomResponse = z.infer<typeof roomResponseSchema>;
 export type RoomDetailResponse = z.infer<typeof roomDetailResponseSchema>;
 export type CreateCardInput = z.infer<typeof createCardSchema>;
 export type CardResponse = z.infer<typeof cardSchema>;
+export type UpdateCardPositionsInput = z.infer<typeof updateCardPositionsSchema>;
+export type UpdateStageInput = z.infer<typeof updateStageSchema>;
 
 export const roomStatsResponseSchema = z.object({
     totalSessions: z.number(),
