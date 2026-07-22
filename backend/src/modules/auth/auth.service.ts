@@ -86,11 +86,11 @@ export async function logout(refreshToken: string): Promise<void> {
     }
 }
 
-export async function verifyTokenWithChalyshAuth(token: string): Promise<typeof userProfiles.$inferSelect> {
+export async function fetchAndSaveUserProfile(token: string): Promise<typeof userProfiles.$inferSelect> {
     const env = getEnv();
-    const verifyUrl = `${env.AUTH_SERVICE_URL}/auth/verify`;
+    const profileUrl = `${env.AUTH_SERVICE_URL}/user/me`;
 
-    const response = await fetch(verifyUrl, {
+    const response = await fetch(profileUrl, {
         method: 'GET',
         headers: {
             'Authorization': `Bearer ${token}`,
@@ -99,34 +99,11 @@ export async function verifyTokenWithChalyshAuth(token: string): Promise<typeof 
     });
 
     if (!response.ok) {
-        throw new Error('Invalid token');
+        throw new Error('Failed to fetch user profile');
     }
 
-    const { userId } = await response.json() as { valid: boolean; userId: string };
-
-    // Try finding local profile first (fast indexed SQLite query, no DB writes)
-    let localUser = await getUserProfile(userId);
-
-    // Fallback: if user profile is missing locally, fetch full profile & upsert once
-    if (!localUser) {
-        const profileUrl = `${env.AUTH_SERVICE_URL}/user/me`;
-        const profileResponse = await fetch(profileUrl, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            },
-        });
-
-        if (!profileResponse.ok) {
-            throw new Error('Failed to fetch user profile');
-        }
-
-        const authUser = await profileResponse.json() as ChalyshAuthUser;
-        localUser = await upsertUserProfile(authUser);
-    }
-
-    return localUser;
+    const authUser = await response.json() as ChalyshAuthUser;
+    return await upsertUserProfile(authUser);
 }
 
 export async function getUserProfile(authUserId: string) {
