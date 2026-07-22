@@ -4,7 +4,10 @@ import type { FastifyInstance } from 'fastify';
 
 export default fp(async function corsPlugin(app: FastifyInstance) {
     await app.register(cors, {
-        origin: ['http://localhost:5173', 'http://localhost:3001'],
+        origin: true,
         credentials: true,
+        methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization'],
     });
 });
+

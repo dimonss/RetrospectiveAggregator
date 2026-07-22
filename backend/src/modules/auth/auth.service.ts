@@ -70,11 +70,19 @@ export async function refreshTokens(refreshToken: string): Promise<TokenPairResp
     const response = await proxyToAuth('/auth/refresh', { refreshToken });
 
     if (!response.ok) {
-        const error = await response.json() as { message: string };
+        const error = await response.json().catch(() => ({ message: 'Token refresh failed' })) as { message: string };
         throw new Error(error.message || 'Token refresh failed');
     }
 
-    return await response.json() as TokenPairResponse;
+    const data = await response.json() as TokenPairResponse;
+    if (!data || !data.accessToken || !data.refreshToken) {
+        throw new Error('Auth service returned invalid token pair');
+    }
+
+    return {
+        accessToken: data.accessToken,
+        refreshToken: data.refreshToken,
+    };
 }
 
 export async function logout(refreshToken: string): Promise<void> {

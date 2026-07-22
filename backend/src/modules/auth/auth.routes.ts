@@ -117,7 +117,10 @@ export async function authRoutes(app: FastifyInstance) {
         async (request, reply) => {
             try {
                 const result = await refreshTokens(request.body.refreshToken);
-                return reply.send(result);
+                return {
+                    accessToken: result.accessToken,
+                    refreshToken: result.refreshToken,
+                };
             } catch (err: unknown) {
                 const message = err instanceof Error ? err.message : 'Token refresh failed';
                 return reply.status(401).send({ message });
