@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Check, Copy, ArrowLeft, CheckSquare, Loader2, Home } from 'lucide-react';
 import { MOCK_ROOM, MOCK_USERS, type ActionItem, type RetroRoom } from '../mocks/data';
-import { getRoomApi } from '../api/rooms';
+import { getRoomApi, toggleActionItemDoneApi } from '../api/rooms';
+import { useAuth } from '../context/AuthContext';
 import ThemeToggle from '../components/ThemeToggle';
 import './SummaryPage.css';
 
@@ -18,8 +19,13 @@ function buildSummaryData(room: RetroRoom) {
   return allActionItems;
 }
 
-function generateMarkdown(room: RetroRoom, items: ReturnType<typeof buildSummaryData>) {
+function generateMarkdown(
+  room: RetroRoom,
+  items: ReturnType<typeof buildSummaryData>,
+  participantsList?: Array<{ id: string; name: string; avatar: string }>
+) {
   const date = new Date(room.createdAt || Date.now()).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+  const pList = (participantsList && participantsList.length > 0) ? participantsList : (room.participants || MOCK_USERS);
   const lines = [
     `# 🔄 Ретроспектива: ${room.name}`,
     `*${date}*`,
@@ -27,7 +33,7 @@ function generateMarkdown(room: RetroRoom, items: ReturnType<typeof buildSummary
     '## 📋 Задачи',
     '',
     ...items.map(ai => {
-      const assignee = (room.participants || MOCK_USERS).find(u => u.id === ai.assigneeId);
+      const assignee = pList.find(u => u.id === ai.assigneeId) || MOCK_USERS.find(u => u.id === ai.assigneeId);
       return `- [ ] ${ai.text} *(${assignee?.name || 'Не назначен'})*`;
     }),
     '',
@@ -39,6 +45,7 @@ function generateMarkdown(room: RetroRoom, items: ReturnType<typeof buildSummary
 
 export default function SummaryPage() {
   const { id } = useParams();
+  const { user } = useAuth();
   const [copied, setCopied] = useState(false);
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
   const [room, setRoom] = useState<RetroRoom>(MOCK_ROOM);
@@ -49,6 +56,30 @@ export default function SummaryPage() {
       setIsLoading(true);
       getRoomApi(id)
         .then((data) => {
+          const mappedCards = data.cards.map((c) => ({
+            id: c.id,
+            text: c.text,
+            authorId: c.authorId,
+            columnId: c.columnId,
+            votes: c.votes,
+            clusterId: c.clusterId || undefined,
+            isAnonymous: c.isAnonymous,
+            actionItems: (c.actionItems || []).map(ai => ({
+              id: ai.id,
+              text: ai.text,
+              assigneeId: ai.assigneeId || '',
+              done: ai.done,
+            })),
+          }));
+
+          const initialChecked = new Set<string>();
+          mappedCards.forEach(c => {
+            c.actionItems.forEach(ai => {
+              if (ai.done) initialChecked.add(ai.id);
+            });
+          });
+          setCheckedItems(initialChecked);
+
           setRoom({
             id: data.id,
             name: data.name,
@@ -61,16 +92,7 @@ export default function SummaryPage() {
             createdAt: data.createdAt,
             columns: data.columns,
             clusters: [],
-            cards: data.cards.map((c) => ({
-              id: c.id,
-              text: c.text,
-              authorId: c.authorId,
-              columnId: c.columnId,
-              votes: c.votes,
-              clusterId: c.clusterId || undefined,
-              isAnonymous: c.isAnonymous,
-              actionItems: [],
-            })),
+            cards: mappedCards,
           });
         })
         .catch((err) => console.error('Error fetching room summary:', err))
@@ -80,6 +102,10 @@ export default function SummaryPage() {
     }
   }, [id]);
 
+  const participantsList = (room.participants && room.participants.length > 0)
+    ? room.participants
+    : (user ? [{ id: user.id, name: user.name, avatar: user.avatar }] : MOCK_USERS);
+
   const actionItems = buildSummaryData(room);
 
   const topCards = [...room.cards]
@@ -87,18 +113,29 @@ export default function SummaryPage() {
     .slice(0, 5);
 
   const handleCopy = () => {
-    const md = generateMarkdown(room, actionItems);
+    const md = generateMarkdown(room, actionItems, participantsList);
     navigator.clipboard.writeText(md).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const toggleCheck = (id: string) => {
+  const toggleCheck = async (actionItemId: string) => {
     setCheckedItems(prev => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      next.has(actionItemId) ? next.delete(actionItemId) : next.add(actionItemId);
       return next;
     });
+
+    try {
+      await toggleActionItemDoneApi(actionItemId);
+    } catch (err) {
+      console.error('Failed to toggle action item state:', err);
+      setCheckedItems(prev => {
+        const next = new Set(prev);
+        next.has(actionItemId) ? next.delete(actionItemId) : next.add(actionItemId);
+        return next;
+      });
+    }
   };
 
   if (isLoading) {
@@ -152,7 +189,10 @@ export default function SummaryPage() {
 
             <div className="action-items-cards">
               {actionItems.map((item) => {
-                const assignee = MOCK_USERS.find(u => u.id === item.assigneeId);
+                const assignee = participantsList.find(u => u.id === item.assigneeId)
+                  || (user && user.id === item.assigneeId ? user : undefined)
+                  || MOCK_USERS.find(u => u.id === item.assigneeId);
+                const avatarUrl = assignee?.avatar || (item.assigneeId ? `https://api.dicebear.com/7.x/avataaars/svg?seed=${item.assigneeId}` : undefined);
                 const isDone = checkedItems.has(item.id);
                 return (
                   <div
@@ -177,13 +217,15 @@ export default function SummaryPage() {
                       <p className="action-card-source">↩ {item.cardText}</p>
                     </div>
                     <div className="action-card-assignee">
-                      <img
-                        src={assignee?.avatar}
-                        alt={assignee?.name}
-                        className="assignee-avatar"
-                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                      />
-                      <span className="assignee-name">{assignee?.name?.split(' ')[0]}</span>
+                      {avatarUrl && (
+                        <img
+                          src={avatarUrl}
+                          alt={assignee?.name || 'Ответственный'}
+                          className="assignee-avatar"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                        />
+                      )}
+                      <span className="assignee-name">{assignee?.name?.split(' ')[0] || 'Не назначен'}</span>
                     </div>
                   </div>
                 );
@@ -222,7 +264,7 @@ export default function SummaryPage() {
               <div className="stats-list glass">
                 <div className="stat-row">
                   <span className="stat-row-label">Участников</span>
-                  <span className="stat-row-value">{room.participantIds.length}</span>
+                  <span className="stat-row-value">{(room.participantIds || []).length}</span>
                 </div>
                 <div className="stat-row">
                   <span className="stat-row-label">Карточек идей</span>
@@ -254,7 +296,7 @@ export default function SummaryPage() {
                 <h2>Markdown превью</h2>
               </div>
               <pre className="markdown-preview glass">
-                {generateMarkdown(room, actionItems)}
+                {generateMarkdown(room, actionItems, participantsList)}
               </pre>
               <button
                 className="btn-primary"

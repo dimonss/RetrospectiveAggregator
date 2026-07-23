@@ -54,4 +54,16 @@ export const retroVotes = sqliteTable('retro_votes', {
     createdAt: text('created_at').$defaultFn(() => new Date().toISOString()),
 });
 
+export const retroActionItems = sqliteTable('retro_action_items', {
+    id: text('id').primaryKey().$defaultFn(() => randomUUID()),
+    cardId: text('card_id').notNull().references(() => retroCards.id, { onDelete: 'cascade' }),
+    roomId: text('room_id').notNull().references(() => retroRooms.id, { onDelete: 'cascade' }),
+    text: text('text').notNull(),
+    assigneeId: text('assignee_id').references(() => userProfiles.id, { onDelete: 'set null' }),
+    done: text('done').notNull().$default(() => 'false'),
+    createdAt: text('created_at').$defaultFn(() => new Date().toISOString()),
+    updatedAt: text('updated_at').$defaultFn(() => new Date().toISOString()),
+});
+
+
 

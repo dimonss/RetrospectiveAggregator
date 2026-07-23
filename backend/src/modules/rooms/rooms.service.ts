@@ -1,6 +1,6 @@
 import { eq, count, and } from 'drizzle-orm';
 import { getDb } from '../../db/connection.js';
-import { retroRooms, retroParticipants, retroCards, retroVotes, userProfiles } from '../../db/schema.js';
+import { retroRooms, retroParticipants, retroCards, retroVotes, retroActionItems, userProfiles } from '../../db/schema.js';
 import type { CreateRoomInput, RoomResponse, RoomDetailResponse, CardResponse, CreateCardInput, RoomStatsResponse, UpdateCardPositionsInput } from './rooms.schemas.js';
 
 function buildInviteLink(roomId: string): string {
@@ -162,6 +162,12 @@ export async function getRoomById(
         .all()
         .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
 
+    const dbActionItems = db
+        .select()
+        .from(retroActionItems)
+        .where(eq(retroActionItems.roomId, roomId))
+        .all();
+
     const cards: CardResponse[] = [];
     for (const card of dbCards) {
         const votes = db
@@ -170,6 +176,17 @@ export async function getRoomById(
             .where(eq(retroVotes.cardId, card.id))
             .all()
             .map(v => v.userId);
+
+        const cardActionItems = dbActionItems
+            .filter(ai => ai.cardId === card.id)
+            .map(ai => ({
+                id: ai.id,
+                cardId: ai.cardId,
+                text: ai.text,
+                assigneeId: ai.assigneeId,
+                done: ai.done === 'true',
+                createdAt: ai.createdAt || new Date().toISOString(),
+            }));
 
         cards.push({
             id: card.id,
@@ -180,6 +197,7 @@ export async function getRoomById(
             votes,
             clusterId: card.clusterId,
             isAnonymous: card.isAnonymous === 'true',
+            actionItems: cardActionItems,
             createdAt: card.createdAt || new Date().toISOString(),
         });
     }
@@ -409,9 +427,12 @@ export async function getUserStats(userId: string): Promise<RoomStatsResponse> {
         .filter(c => roomIds.includes(c.roomId));
 
     const totalCards = allCards.length;
-    const totalActionItems = allCards.filter(
-        c => wentWellRoomIds.includes(c.roomId) && c.columnId === 'col-3'
-    ).length;
+    const allActionItems = db
+        .select()
+        .from(retroActionItems)
+        .all()
+        .filter(ai => roomIds.includes(ai.roomId));
+    const totalActionItems = allActionItems.length;
 
     return {
         totalSessions,
@@ -419,6 +440,107 @@ export async function getUserStats(userId: string): Promise<RoomStatsResponse> {
         totalParticipants,
         totalCards,
     };
+}
+
+export async function addActionItemToCard(
+    cardId: string,
+    userProfile: typeof userProfiles.$inferSelect,
+    input: { text: string; assigneeId?: string },
+) {
+    const db = getDb();
+
+    const card = db
+        .select()
+        .from(retroCards)
+        .where(eq(retroCards.id, cardId))
+        .get();
+
+    if (!card) {
+        throw new Error('Card not found');
+    }
+
+    let validAssigneeId: string | null = null;
+    if (input.assigneeId) {
+        const userExists = db
+            .select()
+            .from(userProfiles)
+            .where(eq(userProfiles.id, input.assigneeId))
+            .get();
+        if (userExists) {
+            validAssigneeId = input.assigneeId;
+        }
+    }
+
+    const createdActionItem = db
+        .insert(retroActionItems)
+        .values({
+            cardId: card.id,
+            roomId: card.roomId,
+            text: input.text,
+            assigneeId: validAssigneeId,
+            done: 'false',
+        })
+        .returning()
+        .get();
+
+    return {
+        id: createdActionItem.id,
+        cardId: createdActionItem.cardId,
+        text: createdActionItem.text,
+        assigneeId: createdActionItem.assigneeId,
+        done: createdActionItem.done === 'true',
+        createdAt: createdActionItem.createdAt || new Date().toISOString(),
+    };
+}
+
+export async function toggleActionItemDone(
+    actionItemId: string,
+    userProfile: typeof userProfiles.$inferSelect,
+) {
+    const db = getDb();
+
+    const item = db
+        .select()
+        .from(retroActionItems)
+        .where(eq(retroActionItems.id, actionItemId))
+        .get();
+
+    if (!item) {
+        throw new Error('Action item not found');
+    }
+
+    const nextDone = item.done === 'true' ? 'false' : 'true';
+
+    db.update(retroActionItems)
+        .set({
+            done: nextDone,
+            updatedAt: new Date().toISOString(),
+        })
+        .where(eq(retroActionItems.id, actionItemId))
+        .run();
+
+    return {
+        id: item.id,
+        done: nextDone === 'true',
+    };
+}
+
+export async function deleteActionItem(
+    actionItemId: string,
+    userProfile: typeof userProfiles.$inferSelect,
+) {
+    const db = getDb();
+
+    const item = db
+        .select()
+        .from(retroActionItems)
+        .where(eq(retroActionItems.id, actionItemId))
+        .get();
+
+    if (!item) return false;
+
+    db.delete(retroActionItems).where(eq(retroActionItems.id, actionItemId)).run();
+    return true;
 }
 
 export async function toggleCardVote(

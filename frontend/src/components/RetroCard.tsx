@@ -10,6 +10,7 @@ const NOTE_TEXT_COLORS = ['#92400e', '#9d174d', '#166534', '#1e3a8a', '#4c1d95']
 interface Props {
   card: RetroCard;
   stage: Stage;
+  isFacilitator?: boolean;
   currentUserId: string;
   userVotesLeft: number;
   columnColor: string;
@@ -23,7 +24,7 @@ interface Props {
 }
 
 export default function RetroCard({
-  card, stage, currentUserId, userVotesLeft,
+  card, stage, isFacilitator, currentUserId, userVotesLeft,
   columnColor, cardIndex, isGrouped, participants,
   onVote, onDelete, onAddActionItem, isDragging
 }: Props) {
@@ -45,9 +46,14 @@ export default function RetroCard({
     ? currentUser
     : (participants?.find(u => u.id === card.authorId) || MOCK_USERS.find(u => u.id === card.authorId));
 
+  const userList = (participants && participants.length > 0)
+    ? participants
+    : (currentUser ? [{ id: currentUser.id, name: currentUser.name, avatar: currentUser.avatar }] : MOCK_USERS);
+
   const submitAction = () => {
     if (actionText.trim()) {
-      onAddActionItem(card.id, actionText.trim(), assigneeId);
+      const selectedAssignee = assigneeId || userList[0]?.id || currentUserId;
+      onAddActionItem(card.id, actionText.trim(), selectedAssignee);
       setActionText('');
       setShowActionForm(false);
     }
@@ -107,7 +113,7 @@ export default function RetroCard({
 
         {/* Actions */}
         <div className="card-actions">
-          {stage === 'discussion' && (
+          {stage === 'discussion' && isFacilitator && (
             <button
               className="card-action-btn"
               onClick={() => setShowActionForm(!showActionForm)}
@@ -143,12 +149,12 @@ export default function RetroCard({
           {showActions && (
             <ul className="action-items-list">
               {card.actionItems.map((ai) => {
-                const assignee = MOCK_USERS.find(u => u.id === ai.assigneeId);
+                const assignee = userList.find(u => u.id === ai.assigneeId) || (currentUser && currentUser.id === ai.assigneeId ? currentUser : undefined);
                 return (
                   <li key={ai.id} className="action-item">
                     <span className="action-item-check">☐</span>
                     <span className="action-item-text">{ai.text}</span>
-                    <span className="action-item-assignee">{assignee?.name?.split(' ')[0]}</span>
+                    <span className="action-item-assignee">{assignee?.name?.split(' ')[0] || 'Не назначен'}</span>
                   </li>
                 );
               })}
@@ -169,12 +175,12 @@ export default function RetroCard({
             rows={2}
           />
           <select
-            value={assigneeId}
+            value={assigneeId || userList[0]?.id || ''}
             onChange={(e) => setAssigneeId(e.target.value)}
             className="action-form-select"
             id={`action-assignee-${card.id}`}
           >
-            {MOCK_USERS.map(u => (
+            {userList.map(u => (
               <option key={u.id} value={u.id}>{u.name}</option>
             ))}
           </select>

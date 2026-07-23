@@ -10,6 +10,8 @@ import {
     roomStatsResponseSchema,
     createCardSchema,
     cardSchema,
+    createActionItemSchema,
+    actionItemSchema,
     deleteCardParamsSchema,
     deleteCardResponseSchema,
     toggleVoteParamsSchema,
@@ -28,6 +30,9 @@ import {
     toggleCardVote,
     updateCardPositions,
     updateRoomStage,
+    addActionItemToCard,
+    toggleActionItemDone,
+    deleteActionItem,
 } from './rooms.service.js';
 
 export async function roomsRoutes(app: FastifyInstance) {
@@ -282,6 +287,100 @@ export async function roomsRoutes(app: FastifyInstance) {
             } catch (err: unknown) {
                 const message = err instanceof Error ? err.message : 'Error voting on card';
                 return reply.status(400).send({ message });
+            }
+        },
+    );
+
+    // POST /rooms/cards/:cardId/action-items - Add action item to card
+    typedApp.post(
+        '/rooms/cards/:cardId/action-items',
+        {
+            preHandler: [authenticate],
+            schema: {
+                tags: ['ActionItems'],
+                description: 'Add action item to a card',
+                security: [{ bearerAuth: [] }],
+                params: z.object({ cardId: z.string() }),
+                body: createActionItemSchema,
+                response: {
+                    201: actionItemSchema,
+                    401: errorResponseSchema,
+                    404: errorResponseSchema,
+                },
+            },
+        },
+        async (request, reply) => {
+            const user = request.currentUser!;
+            const { cardId } = request.params as { cardId: string };
+            try {
+                const actionItem = await addActionItemToCard(cardId, user, request.body);
+                return reply.status(201).send(actionItem);
+            } catch (err: unknown) {
+                const message = err instanceof Error ? err.message : 'Error adding action item';
+                return reply.status(404).send({ message });
+            }
+        },
+    );
+
+    // PATCH /rooms/action-items/:actionItemId/toggle - Toggle action item done state
+    typedApp.patch(
+        '/rooms/action-items/:actionItemId/toggle',
+        {
+            preHandler: [authenticate],
+            schema: {
+                tags: ['ActionItems'],
+                description: 'Toggle action item done state',
+                security: [{ bearerAuth: [] }],
+                params: z.object({ actionItemId: z.string() }),
+                response: {
+                    200: z.object({ id: z.string(), done: z.boolean() }),
+                    401: errorResponseSchema,
+                    404: errorResponseSchema,
+                },
+            },
+        },
+        async (request, reply) => {
+            const user = request.currentUser!;
+            const { actionItemId } = request.params as { actionItemId: string };
+            try {
+                const result = await toggleActionItemDone(actionItemId, user);
+                return reply.send(result);
+            } catch (err: unknown) {
+                const message = err instanceof Error ? err.message : 'Error toggling action item';
+                return reply.status(404).send({ message });
+            }
+        },
+    );
+
+    // DELETE /rooms/action-items/:actionItemId - Delete action item
+    typedApp.delete(
+        '/rooms/action-items/:actionItemId',
+        {
+            preHandler: [authenticate],
+            schema: {
+                tags: ['ActionItems'],
+                description: 'Delete action item',
+                security: [{ bearerAuth: [] }],
+                params: z.object({ actionItemId: z.string() }),
+                response: {
+                    200: z.object({ success: z.boolean() }),
+                    401: errorResponseSchema,
+                    404: errorResponseSchema,
+                },
+            },
+        },
+        async (request, reply) => {
+            const user = request.currentUser!;
+            const { actionItemId } = request.params as { actionItemId: string };
+            try {
+                const deleted = await deleteActionItem(actionItemId, user);
+                if (!deleted) {
+                    return reply.status(404).send({ message: 'Action item not found' });
+                }
+                return reply.send({ success: true });
+            } catch (err: unknown) {
+                const message = err instanceof Error ? err.message : 'Error deleting action item';
+                return reply.status(404).send({ message });
             }
         },
     );

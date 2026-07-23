@@ -20,6 +20,15 @@ export interface RoomApiData {
     updatedAt: string;
 }
 
+export interface ActionItemApiData {
+    id: string;
+    cardId: string;
+    text: string;
+    assigneeId?: string | null;
+    done: boolean;
+    createdAt: string;
+}
+
 export interface CardApiData {
     id: string;
     text: string;
@@ -29,6 +38,7 @@ export interface CardApiData {
     votes: string[];
     clusterId?: string | null;
     isAnonymous: boolean;
+    actionItems?: ActionItemApiData[];
     createdAt: string;
 }
 
@@ -108,4 +118,24 @@ export async function toggleCardVoteApi(cardId: string): Promise<{ votes: string
         method: 'POST',
     });
 }
+
+export async function addActionItemApi(
+    cardId: string,
+    text: string,
+    assigneeId?: string
+): Promise<ActionItemApiData> {
+    return apiRequest<ActionItemApiData>(`/rooms/cards/${cardId}/action-items`, {
+        method: 'POST',
+        body: JSON.stringify({ text, assigneeId }),
+    });
+}
+
+export async function toggleActionItemDoneApi(
+    actionItemId: string
+): Promise<{ id: string; done: boolean }> {
+    return apiRequest<{ id: string; done: boolean }>(`/rooms/action-items/${actionItemId}/toggle`, {
+        method: 'PATCH',
+    });
+}
+
 

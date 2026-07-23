@@ -18,6 +18,23 @@ export function initDb(dbPath: string) {
         // Column already exists or table not created yet
     }
 
+    try {
+        sqlite.exec(`
+            CREATE TABLE IF NOT EXISTS retro_action_items (
+                id TEXT PRIMARY KEY NOT NULL,
+                card_id TEXT NOT NULL REFERENCES retro_cards(id) ON DELETE CASCADE,
+                room_id TEXT NOT NULL REFERENCES retro_rooms(id) ON DELETE CASCADE,
+                text TEXT NOT NULL,
+                assignee_id TEXT REFERENCES user_profiles(id) ON DELETE SET NULL,
+                done TEXT NOT NULL DEFAULT 'false',
+                created_at TEXT,
+                updated_at TEXT
+            )
+        `);
+    } catch {
+        // Table already exists
+    }
+
     db = drizzle(sqlite, { schema });
     return db;
 }

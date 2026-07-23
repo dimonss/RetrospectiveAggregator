@@ -22,7 +22,7 @@ import {
   MOCK_ROOM, MOCK_USERS, MAX_VOTES,
   type RetroRoom, type RetroCard, type Stage, type ActionItem,
 } from '../mocks/data';
-import { getRoomApi, addCardApi, deleteCardApi, updateCardPositionsApi, updateRoomStageApi, toggleCardVoteApi } from '../api/rooms';
+import { getRoomApi, addCardApi, deleteCardApi, updateCardPositionsApi, updateRoomStageApi, toggleCardVoteApi, addActionItemApi } from '../api/rooms';
 import StageIndicator from '../components/StageIndicator';
 import RetroColumn from '../components/RetroColumn';
 import RetroCardComponent from '../components/RetroCard';
@@ -93,7 +93,12 @@ export default function RetroPage() {
               votes: c.votes,
               clusterId: c.clusterId || undefined,
               isAnonymous: c.isAnonymous,
-              actionItems: [],
+              actionItems: (c.actionItems || []).map(ai => ({
+                id: ai.id,
+                text: ai.text,
+                assigneeId: ai.assigneeId || '',
+                done: ai.done,
+              })),
             })),
           });
         })
@@ -128,7 +133,12 @@ export default function RetroPage() {
                 votes: c.votes,
                 clusterId: c.clusterId || undefined,
                 isAnonymous: c.isAnonymous,
-                actionItems: [],
+                actionItems: (c.actionItems || []).map(ai => ({
+                  id: ai.id,
+                  text: ai.text,
+                  assigneeId: ai.assigneeId || '',
+                  done: ai.done,
+                })),
               })),
             };
           });
@@ -243,13 +253,15 @@ export default function RetroPage() {
     }
   };
 
-  const handleAddActionItem = (cardId: string, text: string, assigneeId: string) => {
+  const handleAddActionItem = async (cardId: string, text: string, assigneeId: string) => {
+    const tempId = `ai-${Date.now()}`;
     const newItem: ActionItem = {
-      id: `ai-${Date.now()}`,
+      id: tempId,
       text,
       assigneeId,
       done: false,
     };
+
     setRoom(prev => ({
       ...prev,
       cards: prev.cards.map(c =>
@@ -258,6 +270,33 @@ export default function RetroPage() {
           : c
       ),
     }));
+
+    try {
+      const created = await addActionItemApi(cardId, text, assigneeId);
+      setRoom(prev => ({
+        ...prev,
+        cards: prev.cards.map(c =>
+          c.id === cardId
+            ? {
+                ...c,
+                actionItems: (c.actionItems || []).map(ai =>
+                  ai.id === tempId ? { id: created.id, text: created.text, assigneeId: created.assigneeId || '', done: created.done } : ai
+                ),
+              }
+            : c
+        ),
+      }));
+    } catch (err) {
+      console.error('Failed to add action item:', err);
+      setRoom(prev => ({
+        ...prev,
+        cards: prev.cards.map(c =>
+          c.id === cardId
+            ? { ...c, actionItems: (c.actionItems || []).filter(ai => ai.id !== tempId) }
+            : c
+        ),
+      }));
+    }
   };
 
   const handleNextStage = () => {
@@ -357,6 +396,12 @@ export default function RetroPage() {
         emoji: '⏳',
         title: 'Группировка карточек',
         hint: 'Создатель комнаты формирует темы и группирует карточки. Пожалуйста, подождите...',
+      }
+    : !isFacilitator && room.stage === 'discussion'
+    ? {
+        emoji: '⏳',
+        title: 'Обсуждение итогов',
+        hint: 'Создатель комнаты подводит итоги ретроспективы и фиксирует задачи. Пожалуйста, подождите...',
       }
     : (STAGE_HINTS[room.stage] || STAGE_HINTS.brainstorming);
 

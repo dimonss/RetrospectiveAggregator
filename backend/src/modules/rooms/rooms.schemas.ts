@@ -22,6 +22,20 @@ export const roomResponseSchema = z.object({
 export const roomListResponseSchema = z.array(roomResponseSchema);
 
 
+export const actionItemSchema = z.object({
+    id: z.string(),
+    cardId: z.string(),
+    text: z.string(),
+    assigneeId: z.string().optional().nullable(),
+    done: z.boolean(),
+    createdAt: z.string(),
+});
+
+export const createActionItemSchema = z.object({
+    text: z.string().min(1, 'Text is required'),
+    assigneeId: z.string().optional(),
+});
+
 export const cardSchema = z.object({
     id: z.string(),
     text: z.string(),
@@ -31,6 +45,7 @@ export const cardSchema = z.object({
     votes: z.array(z.string()),
     clusterId: z.string().optional().nullable(),
     isAnonymous: z.boolean(),
+    actionItems: z.array(actionItemSchema).default([]),
     createdAt: z.string(),
 });
 
