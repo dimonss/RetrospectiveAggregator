@@ -150,11 +150,22 @@ export default function RetroCard({
             <ul className="action-items-list">
               {card.actionItems.map((ai) => {
                 const assignee = userList.find(u => u.id === ai.assigneeId) || (currentUser && currentUser.id === ai.assigneeId ? currentUser : undefined);
+                const avatarUrl = assignee?.avatar || (ai.assigneeId ? `https://api.dicebear.com/7.x/avataaars/svg?seed=${ai.assigneeId}` : undefined);
                 return (
                   <li key={ai.id} className="action-item">
                     <span className="action-item-check">☐</span>
                     <span className="action-item-text">{ai.text}</span>
-                    <span className="action-item-assignee">{assignee?.name?.split(' ')[0] || 'Не назначен'}</span>
+                    <div className="action-item-assignee-tag">
+                      {avatarUrl && (
+                        <img
+                          src={avatarUrl}
+                          alt={assignee?.name || 'Исполнитель'}
+                          className="action-item-assignee-avatar"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                        />
+                      )}
+                      <span>{assignee?.name?.split(' ')[0] || 'Не назначен'}</span>
+                    </div>
                   </li>
                 );
               })}
@@ -174,16 +185,27 @@ export default function RetroCard({
             id={`action-text-${card.id}`}
             rows={2}
           />
-          <select
-            value={assigneeId || userList[0]?.id || ''}
-            onChange={(e) => setAssigneeId(e.target.value)}
-            className="action-form-select"
-            id={`action-assignee-${card.id}`}
-          >
-            {userList.map(u => (
-              <option key={u.id} value={u.id}>{u.name}</option>
-            ))}
-          </select>
+          <div className="action-form-assignees">
+            <span className="action-form-assignees-label">Исполнитель:</span>
+            <div className="assignee-chips">
+              {userList.map(u => {
+                const isSelected = (assigneeId || userList[0]?.id) === u.id;
+                const avatarUrl = u.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.id}`;
+                return (
+                  <button
+                    key={u.id}
+                    type="button"
+                    className={`assignee-chip ${isSelected ? 'assignee-chip--selected' : ''}`}
+                    onClick={() => setAssigneeId(u.id)}
+                    title={u.name}
+                  >
+                    <img src={avatarUrl} alt={u.name} className="assignee-chip-avatar" />
+                    <span className="assignee-chip-name">{u.name.split(' ')[0]}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
           <div className="action-form-btns">
             <button className="btn-primary" style={{ padding: '6px 14px', fontSize: '13px' }} onClick={submitAction}>
               Добавить

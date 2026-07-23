@@ -243,11 +243,24 @@
   line-height: 1.4;
 }
 
-.action-item-assignee {
+.action-item-assignee-tag {
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 10px;
-  opacity: 0.6;
   font-weight: 600;
+  opacity: 0.85;
+  background: rgba(0,0,0,0.06);
+  padding: 2px 6px;
+  border-radius: 10px;
+}
+
+.action-item-assignee-avatar {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 /* Action item form */
@@ -257,7 +270,7 @@
   padding-top: var(--space-sm);
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .action-form-input {
@@ -277,24 +290,61 @@
   border-color: var(--accent-primary);
 }
 
-.action-form-select {
-  width: 100%;
-  background: rgba(255,255,255,0.5);
-  border: 1px solid rgba(0,0,0,0.15);
-  border-radius: var(--radius-sm);
-  padding: 6px 8px;
-  font-size: 13px;
-  color: var(--note-text, #92400e);
-  font-family: var(--font-sans);
-  cursor: pointer;
+.action-form-assignees {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-.action-form-select:focus {
-  outline: none;
-  border-color: var(--accent-primary);
+.action-form-assignees-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--note-text, #92400e);
+  opacity: 0.8;
+}
+
+.assignee-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.assignee-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  background: rgba(0,0,0,0.06);
+  color: var(--note-text, #92400e);
+  border: 1px solid rgba(0,0,0,0.1);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.assignee-chip:hover {
+  background: rgba(0,0,0,0.12);
+  transform: translateY(-1px);
+}
+
+.assignee-chip--selected {
+  background: var(--accent-primary) !important;
+  color: #ffffff !important;
+  border-color: var(--accent-primary) !important;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3);
+}
+
+.assignee-chip-avatar {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 .action-form-btns {
   display: flex;
   gap: 6px;
+  margin-top: 2px;
 }
