@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Check, Copy, ArrowLeft, CheckSquare, Loader2 } from 'lucide-react';
+import { Check, Copy, ArrowLeft, CheckSquare, Loader2, Home } from 'lucide-react';
 import { MOCK_ROOM, MOCK_USERS, type ActionItem, type RetroRoom } from '../mocks/data';
 import { getRoomApi } from '../api/rooms';
 import ThemeToggle from '../components/ThemeToggle';
@@ -115,8 +115,12 @@ export default function SummaryPage() {
       {/* Header */}
       <header className="summary-header glass-elevated">
         <div className="summary-header-left">
-          <Link to={`/retro/${id}`} className="btn-icon" id="btn-back-retro">
+          <Link to={`/retro/${id}`} className="btn-icon" id="btn-back-retro" title="Назад к ретроспективе">
             <ArrowLeft size={18} />
+          </Link>
+          <Link to="/dashboard" className="btn-secondary" id="btn-go-home" title="Выйти на главную страницу" style={{ padding: '8px 14px', fontSize: '13px' }}>
+            <Home size={16} />
+            <span>На главную</span>
           </Link>
           <div>
             <h1 className="summary-title">Итоги ретроспективы</h1>
@@ -261,6 +265,19 @@ export default function SummaryPage() {
                 {copied ? <Check size={16} /> : <Copy size={16} />}
                 {copied ? 'Скопировано!' : 'Скопировать Markdown'}
               </button>
+            </section>
+
+            {/* Navigation back home */}
+            <section className="summary-section">
+              <Link
+                to="/dashboard"
+                className="btn-secondary"
+                style={{ width: '100%', justifyContent: 'center', gap: '8px' }}
+                id="btn-exit-dashboard-sidebar"
+              >
+                <Home size={16} />
+                <span>Выйти на главную страницу</span>
+              </Link>
             </section>
           </div>
         </div>
