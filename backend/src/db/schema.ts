@@ -19,7 +19,7 @@ export const retroRooms = sqliteTable('retro_rooms', {
     id: text('id').primaryKey().$defaultFn(() => randomUUID()),
     name: text('name').notNull(),
     template: text('template').notNull(), // 'went-well' | 'mad-sad-glad' | 'start-stop-continue'
-    stage: text('stage').notNull().$default(() => 'brainstorming'), // 'brainstorming' | 'grouping' | 'voting' | 'discussion'
+    stage: text('stage').notNull().$default(() => 'brainstorming'), // 'brainstorming' | 'grouping' | 'voting' | 'discussion' | 'completed'
     facilitatorId: text('facilitator_id').notNull().references(() => userProfiles.id),
     anonymousMode: text('anonymous_mode').notNull().$default(() => 'false'), // 'true' | 'false' stored as text in sqlite
     createdAt: text('created_at').$defaultFn(() => new Date().toISOString()),

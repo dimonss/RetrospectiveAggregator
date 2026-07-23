@@ -12,7 +12,8 @@ const STAGE_LABELS: Record<string, { label: string; color: string }> = {
   brainstorming: { label: 'Сбор идей', color: '#a855f7' },
   grouping: { label: 'Группировка', color: '#3b82f6' },
   voting: { label: 'Голосование', color: '#f59e0b' },
-  discussion: { label: 'Обсуждение', color: '#22c55e' },
+  discussion: { label: 'Обсуждение', color: '#3b82f6' },
+  completed: { label: 'Завершенный', color: '#10b981' },
 };
 
 const TEMPLATE_NAMES: Record<TemplateId, string> = {

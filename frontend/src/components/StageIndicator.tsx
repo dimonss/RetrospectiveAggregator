@@ -10,14 +10,14 @@ interface Props {
 }
 
 export default function StageIndicator({ currentStage, isFacilitator, onStageChange }: Props) {
-  const visibleStages = isFacilitator
-    ? STAGES
-    : STAGES.filter(s => s.id !== 'grouping' && s.id !== 'discussion');
+  const visibleStages = STAGES.filter(
+    s => s.id !== 'completed' && (isFacilitator || (s.id !== 'grouping' && s.id !== 'discussion'))
+  );
 
   const stageOrder: Stage[] = visibleStages.map(s => s.id);
-  let currentIdx = stageOrder.indexOf(currentStage);
+  let currentIdx = currentStage === 'completed' ? visibleStages.length : stageOrder.indexOf(currentStage);
 
-  if (!isFacilitator) {
+  if (!isFacilitator && currentStage !== 'completed') {
     if (currentStage === 'grouping') {
       currentIdx = 0; // Highlight ideas step while facilitator is grouping
     } else if (currentStage === 'discussion') {

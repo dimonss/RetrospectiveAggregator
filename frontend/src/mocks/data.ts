@@ -1,4 +1,4 @@
-export type Stage = 'brainstorming' | 'grouping' | 'voting' | 'discussion';
+export type Stage = 'brainstorming' | 'grouping' | 'voting' | 'discussion' | 'completed';
 
 export interface User {
   id: string;
@@ -183,6 +183,7 @@ export const STAGES: { id: Stage; label: string; emoji: string }[] = [
   { id: 'grouping', label: 'Группировка', emoji: '🗂️' },
   { id: 'voting', label: 'Голосование', emoji: '🗳️' },
   { id: 'discussion', label: 'Обсуждение', emoji: '💬' },
+  { id: 'completed', label: 'Завершенный', emoji: '🏁' },
 ];
 
 export const MAX_VOTES = 5;

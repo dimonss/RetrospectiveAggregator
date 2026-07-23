@@ -97,7 +97,7 @@ export const updateCardPositionsSchema = z.object({
 });
 
 export const updateStageSchema = z.object({
-    stage: z.enum(['brainstorming', 'grouping', 'voting', 'discussion']),
+    stage: z.enum(['brainstorming', 'grouping', 'voting', 'discussion', 'completed']),
 });
 
 export const deleteCardParamsSchema = z.object({

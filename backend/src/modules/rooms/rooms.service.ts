@@ -279,6 +279,7 @@ export async function addCardToRoom(
         votes: [],
         clusterId: createdCard.clusterId,
         isAnonymous: createdCard.isAnonymous === 'true',
+        actionItems: [],
         createdAt: createdCard.createdAt || new Date().toISOString(),
     };
 }
@@ -321,7 +322,7 @@ export async function updateCardPositions(
 export async function updateRoomStage(
     roomId: string,
     userProfile: typeof userProfiles.$inferSelect,
-    stage: 'brainstorming' | 'grouping' | 'voting' | 'discussion',
+    stage: 'brainstorming' | 'grouping' | 'voting' | 'discussion' | 'completed',
 ): Promise<boolean> {
     const db = getDb();
 

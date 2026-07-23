@@ -29,7 +29,7 @@ import RetroCardComponent from '../components/RetroCard';
 import ThemeToggle from '../components/ThemeToggle';
 import './RetroPage.css';
 
-const STAGE_ORDER: Stage[] = ['brainstorming', 'grouping', 'voting', 'discussion'];
+const STAGE_ORDER: Stage[] = ['brainstorming', 'grouping', 'voting', 'discussion', 'completed'];
 
 const STAGE_HINTS: Record<Stage, { title: string; hint: string; emoji: string }> = {
   brainstorming: {
@@ -51,6 +51,11 @@ const STAGE_HINTS: Record<Stage, { title: string; hint: string; emoji: string }>
     emoji: '💬',
     title: 'Обсуждение',
     hint: 'Карточки отсортированы по популярности. Добавляйте задачи к каждой теме.',
+  },
+  completed: {
+    emoji: '🏁',
+    title: 'Ретроспектива завершена',
+    hint: 'Все этапы успешно пройдены. Список задач зафиксирован.',
   },
 };
 
@@ -167,6 +172,13 @@ export default function RetroPage() {
 
   const isFacilitator = user?.id === room.facilitatorId;
   const currentStageIdx = STAGE_ORDER.indexOf(room.stage);
+
+  // Redirect non-facilitator participants to summary page when retro is completed
+  useEffect(() => {
+    if (!isLoading && room.stage === 'completed' && !isFacilitator) {
+      navigate(`/retro/${id}/summary`, { replace: true });
+    }
+  }, [isLoading, room.stage, isFacilitator, id, navigate]);
 
   // Votes left for current user
   const totalVotesUsed = room.cards
@@ -321,6 +333,9 @@ export default function RetroPage() {
       setRoom(prev => ({ ...prev, stage: nextStage }));
       if (id) {
         updateRoomStageApi(id, nextStage).catch(console.error);
+      }
+      if (nextStage === 'completed') {
+        navigate(`/retro/${id}/summary`);
       }
     } else {
       navigate(`/retro/${id}/summary`);
@@ -502,9 +517,11 @@ export default function RetroPage() {
               onClick={handleNextStage}
             >
               <span className="btn-text-mobile-hide">
-                {currentStageIdx < STAGE_ORDER.length - 1
-                  ? `Далее`
-                  : 'Завершить'}
+                {currentStageIdx < STAGE_ORDER.length - 2
+                  ? 'Далее'
+                  : currentStageIdx === STAGE_ORDER.length - 2
+                  ? 'Завершить'
+                  : 'Итоги'}
               </span>
               <ArrowRight size={16} />
             </button>

@@ -11,7 +11,7 @@ export interface RoomApiData {
     id: string;
     name: string;
     template: 'went-well' | 'mad-sad-glad' | 'start-stop-continue';
-    stage: 'brainstorming' | 'grouping' | 'voting' | 'discussion';
+    stage: 'brainstorming' | 'grouping' | 'voting' | 'discussion' | 'completed';
     facilitatorId: string;
     anonymousMode: boolean;
     inviteLink: string;
@@ -105,7 +105,7 @@ export async function updateCardPositionsApi(
 
 export async function updateRoomStageApi(
     roomId: string,
-    stage: 'brainstorming' | 'grouping' | 'voting' | 'discussion'
+    stage: 'brainstorming' | 'grouping' | 'voting' | 'discussion' | 'completed'
 ): Promise<{ success: boolean }> {
     return apiRequest<{ success: boolean }>(`/rooms/${roomId}/stage`, {
         method: 'PATCH',
