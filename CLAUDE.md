@@ -7,8 +7,8 @@
 Все команды выполняются в директории `frontend/`.
 
 - **Версия Node**: v24.x (управление через NVM: `nvm use 24`)
-- **Запуск dev-сервера**: `npm run dev` (запускается на `http://localhost:8090/dev/`)
-- **Запуск туннеля на chalysh.pro**: `npm run tunnel` (проксирует порт `8090` через SSH)
+- **Запуск dev-сервера**: `npm run dev` (запускается на `http://localhost:8090/retrospective/`)
+- **Запуск туннеля**: `npm run tunnel` (проксирует порт `8090` через SSH на удаленный сервер)
 - **Сборка проекта**: `npm run build` (выполняет сборку TypeScript и бандл через Vite)
 - **Проверка типов**: `npx tsc -b`
 

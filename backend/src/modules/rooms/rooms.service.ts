@@ -1,10 +1,14 @@
 import { eq, count, and } from 'drizzle-orm';
 import { getDb } from '../../db/connection.js';
+import { getEnv } from '../../config/env.js';
 import { retroRooms, retroParticipants, retroCards, retroVotes, retroActionItems, userProfiles } from '../../db/schema.js';
 import type { CreateRoomInput, RoomResponse, RoomDetailResponse, CardResponse, CreateCardInput, RoomStatsResponse, UpdateCardPositionsInput } from './rooms.schemas.js';
 
 function buildInviteLink(roomId: string): string {
-    return `https://chalysh.pro/dev/retro/${roomId}`;
+    const appUrl = getEnv().APP_URL.endsWith('/')
+        ? getEnv().APP_URL.slice(0, -1)
+        : getEnv().APP_URL;
+    return `${appUrl}/retro/${roomId}`;
 }
 
 const TEMPLATE_COLUMNS: Record<string, Array<{ id: string; title: string; emoji: string; color: string }>> = {

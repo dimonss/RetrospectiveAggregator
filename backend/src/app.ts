@@ -9,6 +9,8 @@ import swaggerPlugin from './plugins/swagger.plugin.js';
 import { authRoutes } from './modules/auth/auth.routes.js';
 import { roomsRoutes } from './modules/rooms/rooms.routes.js';
 
+import { getEnv } from './config/env.js';
+
 export async function buildApp() {
     const app = Fastify({
         ignoreTrailingSlash: true,
@@ -43,7 +45,9 @@ export async function buildApp() {
     await app.register(swaggerPlugin);
     await app.register(jwtPlugin);
 
-    // Routes under /api prefix
+    // Routes under configurable BASE_URL prefix (default: /api)
+    const baseUrl = getEnv().BASE_URL;
+
     await app.register(async (prefixed) => {
         await prefixed.register(authRoutes);
         await prefixed.register(roomsRoutes);
@@ -54,7 +58,7 @@ export async function buildApp() {
         }, async () => {
             return { status: 'ok', timestamp: new Date().toISOString() };
         });
-    }, { prefix: '/api' });
+    }, { prefix: baseUrl });
 
     return app;
 }
