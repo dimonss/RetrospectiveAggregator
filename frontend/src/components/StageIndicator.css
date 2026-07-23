@@ -10,6 +10,9 @@
   align-items: center;
   gap: 6px;
   position: relative;
+  width: 90px;
+  flex-shrink: 0;
+  text-align: center;
 }
 
 .stage-step--clickable {
@@ -32,15 +35,25 @@
 }
 
 .stage-step--current .stage-dot {
-  border-color: var(--accent-primary);
-  background: rgba(124, 58, 237, 0.2);
-  box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.15);
-  animation: pulse-glow 2s ease-in-out infinite;
+  border: none;
+  background: var(--accent-gradient);
+  color: white;
+  box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.25);
+  animation: stage-pulse 2s ease-in-out infinite;
+}
+
+@keyframes stage-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.25), 0 0 12px rgba(124, 58, 237, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 0 7px rgba(124, 58, 237, 0.15), 0 0 20px rgba(124, 58, 237, 0.35);
+  }
 }
 
 .stage-step--completed .stage-dot {
   background: var(--accent-gradient);
-  border-color: transparent;
+  border: none;
   color: white;
 }
 
@@ -84,6 +97,9 @@
 }
 
 @media (max-width: 600px) {
+  .stage-step {
+    width: 72px;
+  }
   .stage-connector {
     width: 24px;
     margin-bottom: 16px;
@@ -94,6 +110,9 @@
 }
 
 @media (max-width: 480px) {
+  .stage-step {
+    width: 60px;
+  }
   .stage-dot {
     width: 28px;
     height: 28px;
