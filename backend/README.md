@@ -71,6 +71,7 @@
 *   `npm run dev` — Запуск Fastify в dev-режиме с автоматическим перезапуском при изменении файлов (`tsx watch`).
 *   `npm run build` — Компиляция TypeScript-кода в директорию `dist`.
 *   `npm run start` — Запуск скомпилированного Production-билда из директории `dist`.
+*   `npm run start:prod` — Запуск Production-билда в фоновом режиме через PM2.
 *   `npm run db:generate` — Генерация файлов миграций на основе схемы Drizzle.
 *   `npm run db:migrate` — Применение незапущенных миграций к локальной БД SQLite.
 *   `npm run db:studio` — Запуск графического интерфейса Drizzle Studio для удобного просмотра таблиц БД.

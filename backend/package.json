@@ -8,6 +8,7 @@
     "dev": "NODE_TLS_REJECT_UNAUTHORIZED=0 tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
+    "start:prod": "pm2 start dist/server.js --name retro_aggregator --interpreter ~/.nvm/versions/node/v24.13.0/bin/node",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/db/migrate.ts",
     "db:studio": "drizzle-kit studio"
