@@ -134,7 +134,7 @@ export default function RetroPage() {
           });
         })
         .catch((err) => console.error('Error polling room:', err));
-    }, 3000);
+    }, 10000);
 
     return () => clearInterval(interval);
   }, [id, activeCardId]);
