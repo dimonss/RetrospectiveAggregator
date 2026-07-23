@@ -20,13 +20,14 @@ interface Props {
   onVote: (cardId: string) => void;
   onDelete: (cardId: string) => void;
   onAddActionItem: (cardId: string, text: string, assigneeId: string) => void;
+  onDeleteActionItem?: (actionItemId: string) => void;
   isDragging?: boolean;
 }
 
 export default function RetroCard({
   card, stage, isFacilitator, currentUserId, userVotesLeft,
   columnColor, cardIndex, isGrouped, participants,
-  onVote, onDelete, onAddActionItem, isDragging
+  onVote, onDelete, onAddActionItem, onDeleteActionItem, isDragging
 }: Props) {
   const { user: currentUser } = useAuth();
   const colorIdx = cardIndex % NOTE_COLORS.length;
@@ -166,6 +167,19 @@ export default function RetroCard({
                       )}
                       <span>{assignee?.name?.split(' ')[0] || 'Не назначен'}</span>
                     </div>
+                    {isFacilitator && onDeleteActionItem && (
+                      <button
+                        type="button"
+                        className="action-item-delete-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteActionItem(ai.id);
+                        }}
+                        title="Удалить задачу"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    )}
                   </li>
                 );
               })}

@@ -459,6 +459,16 @@ export async function addActionItemToCard(
         throw new Error('Card not found');
     }
 
+    const room = db
+        .select()
+        .from(retroRooms)
+        .where(eq(retroRooms.id, card.roomId))
+        .get();
+
+    if (!room || room.facilitatorId !== userProfile.id) {
+        throw new Error('Forbidden: Only room facilitator can add action items');
+    }
+
     let validAssigneeId: string | null = null;
     if (input.assigneeId) {
         const userExists = db
@@ -538,6 +548,16 @@ export async function deleteActionItem(
         .get();
 
     if (!item) return false;
+
+    const room = db
+        .select()
+        .from(retroRooms)
+        .where(eq(retroRooms.id, item.roomId))
+        .get();
+
+    if (!room || room.facilitatorId !== userProfile.id) {
+        throw new Error('Forbidden: Only room facilitator can delete action items');
+    }
 
     db.delete(retroActionItems).where(eq(retroActionItems.id, actionItemId)).run();
     return true;

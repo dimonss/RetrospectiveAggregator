@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Check, Copy, ArrowLeft, CheckSquare, Loader2, Home } from 'lucide-react';
+import { Check, Copy, ArrowLeft, CheckSquare, Loader2, Home, Trash2 } from 'lucide-react';
 import { MOCK_ROOM, MOCK_USERS, type ActionItem, type RetroRoom } from '../mocks/data';
-import { getRoomApi, toggleActionItemDoneApi } from '../api/rooms';
+import { getRoomApi, toggleActionItemDoneApi, deleteActionItemApi } from '../api/rooms';
 import { useAuth } from '../context/AuthContext';
 import ThemeToggle from '../components/ThemeToggle';
 import './SummaryPage.css';
@@ -102,6 +102,7 @@ export default function SummaryPage() {
     }
   }, [id]);
 
+  const isFacilitator = user?.id === room.facilitatorId;
   const participantsList = (room.participants && room.participants.length > 0)
     ? room.participants
     : (user ? [{ id: user.id, name: user.name, avatar: user.avatar }] : MOCK_USERS);
@@ -117,6 +118,22 @@ export default function SummaryPage() {
     navigator.clipboard.writeText(md).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleDeleteActionItem = async (actionItemId: string) => {
+    setRoom(prev => ({
+      ...prev,
+      cards: prev.cards.map(c => ({
+        ...c,
+        actionItems: (c.actionItems || []).filter(ai => ai.id !== actionItemId),
+      })),
+    }));
+
+    try {
+      await deleteActionItemApi(actionItemId);
+    } catch (err) {
+      console.error('Failed to delete action item:', err);
+    }
   };
 
   const toggleCheck = async (actionItemId: string) => {
@@ -216,16 +233,31 @@ export default function SummaryPage() {
                       <p className="action-card-text">{item.text}</p>
                       <p className="action-card-source">↩ {item.cardText}</p>
                     </div>
-                    <div className="action-card-assignee">
-                      {avatarUrl && (
-                        <img
-                          src={avatarUrl}
-                          alt={assignee?.name || 'Ответственный'}
-                          className="assignee-avatar"
-                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                        />
+                    <div className="action-card-right" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div className="action-card-assignee">
+                        {avatarUrl && (
+                          <img
+                            src={avatarUrl}
+                            alt={assignee?.name || 'Ответственный'}
+                            className="assignee-avatar"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                          />
+                        )}
+                        <span className="assignee-name">{assignee?.name?.split(' ')[0] || 'Не назначен'}</span>
+                      </div>
+                      {isFacilitator && (
+                        <button
+                          type="button"
+                          className="action-card-delete-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteActionItem(item.id);
+                          }}
+                          title="Удалить задачу"
+                        >
+                          <Trash2 size={14} />
+                        </button>
                       )}
-                      <span className="assignee-name">{assignee?.name?.split(' ')[0] || 'Не назначен'}</span>
                     </div>
                   </div>
                 );

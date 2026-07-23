@@ -138,4 +138,12 @@ export async function toggleActionItemDoneApi(
     });
 }
 
+export async function deleteActionItemApi(
+    actionItemId: string
+): Promise<{ success: boolean }> {
+    return apiRequest<{ success: boolean }>(`/rooms/action-items/${actionItemId}`, {
+        method: 'DELETE',
+    });
+}
+
 

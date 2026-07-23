@@ -263,6 +263,26 @@
   object-fit: cover;
 }
 
+.action-item-delete-btn {
+  background: none;
+  border: none;
+  color: var(--note-text, #92400e);
+  opacity: 0.4;
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all var(--transition-fast);
+}
+
+.action-item-delete-btn:hover {
+  opacity: 1;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.15);
+}
+
 /* Action item form */
 .card-action-form {
   margin-top: var(--space-sm);

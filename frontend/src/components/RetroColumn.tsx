@@ -25,6 +25,7 @@ interface SortableCardProps {
   onVote: (cardId: string) => void;
   onDelete: (cardId: string) => void;
   onAddActionItem: (cardId: string, text: string, assigneeId: string) => void;
+  onDeleteActionItem?: (actionItemId: string) => void;
 }
 
 function SortableCard(props: SortableCardProps) {
@@ -59,11 +60,12 @@ interface Props {
   onVote: (cardId: string) => void;
   onDeleteCard: (cardId: string) => void;
   onAddActionItem: (cardId: string, text: string, assigneeId: string) => void;
+  onDeleteActionItem?: (actionItemId: string) => void;
 }
 
 export default function RetroColumn({
   column, cards, stage, isFacilitator, currentUserId, anonymousMode,
-  userVotesLeft, participants, onAddCard, onVote, onDeleteCard, onAddActionItem
+  userVotesLeft, participants, onAddCard, onVote, onDeleteCard, onAddActionItem, onDeleteActionItem
 }: Props) {
   const { setNodeRef, isOver } = useDroppable({ id: column.id });
 
@@ -107,6 +109,7 @@ export default function RetroColumn({
               onVote={onVote}
               onDelete={onDeleteCard}
               onAddActionItem={onAddActionItem}
+              onDeleteActionItem={onDeleteActionItem}
             />
           ))}
         </SortableContext>

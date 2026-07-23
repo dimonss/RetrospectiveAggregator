@@ -22,7 +22,7 @@ import {
   MOCK_ROOM, MOCK_USERS, MAX_VOTES,
   type RetroRoom, type RetroCard, type Stage, type ActionItem,
 } from '../mocks/data';
-import { getRoomApi, addCardApi, deleteCardApi, updateCardPositionsApi, updateRoomStageApi, toggleCardVoteApi, addActionItemApi } from '../api/rooms';
+import { getRoomApi, addCardApi, deleteCardApi, updateCardPositionsApi, updateRoomStageApi, toggleCardVoteApi, addActionItemApi, deleteActionItemApi } from '../api/rooms';
 import StageIndicator from '../components/StageIndicator';
 import RetroColumn from '../components/RetroColumn';
 import RetroCardComponent from '../components/RetroCard';
@@ -299,6 +299,22 @@ export default function RetroPage() {
     }
   };
 
+  const handleDeleteActionItem = async (actionItemId: string) => {
+    setRoom(prev => ({
+      ...prev,
+      cards: prev.cards.map(c => ({
+        ...c,
+        actionItems: (c.actionItems || []).filter(ai => ai.id !== actionItemId),
+      })),
+    }));
+
+    try {
+      await deleteActionItemApi(actionItemId);
+    } catch (err) {
+      console.error('Failed to delete action item:', err);
+    }
+  };
+
   const handleNextStage = () => {
     if (currentStageIdx < STAGE_ORDER.length - 1) {
       const nextStage = STAGE_ORDER[currentStageIdx + 1];
@@ -556,6 +572,7 @@ export default function RetroPage() {
                   onVote={handleVote}
                   onDeleteCard={handleDeleteCard}
                   onAddActionItem={handleAddActionItem}
+                  onDeleteActionItem={handleDeleteActionItem}
                 />
               );
             })}
