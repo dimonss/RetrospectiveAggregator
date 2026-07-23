@@ -22,7 +22,7 @@ import {
   MOCK_ROOM, MOCK_USERS, MAX_VOTES,
   type RetroRoom, type RetroCard, type Stage, type ActionItem,
 } from '../mocks/data';
-import { getRoomApi, addCardApi, deleteCardApi, updateCardPositionsApi, updateRoomStageApi } from '../api/rooms';
+import { getRoomApi, addCardApi, deleteCardApi, updateCardPositionsApi, updateRoomStageApi, toggleCardVoteApi } from '../api/rooms';
 import StageIndicator from '../components/StageIndicator';
 import RetroColumn from '../components/RetroColumn';
 import RetroCardComponent from '../components/RetroCard';
@@ -197,16 +197,50 @@ export default function RetroPage() {
   };
 
 
-  const handleVote = (cardId: string) => {
-    if (votesLeft <= 0) return;
+  const handleVote = async (cardId: string) => {
+    if (!user?.id) return;
+    const card = room.cards.find(c => c.id === cardId);
+    if (!card) return;
+
+    const hasVoted = card.votes.includes(user.id);
+    if (!hasVoted && votesLeft <= 0) return;
+
+    const currentUserId = user.id;
+
+    // Optimistic update
     setRoom(prev => ({
       ...prev,
-      cards: prev.cards.map(c =>
-        c.id === cardId && !c.votes.includes(user?.id || '')
-          ? { ...c, votes: [...c.votes, user?.id || ''] }
-          : c
-      ),
+      cards: prev.cards.map(c => {
+        if (c.id !== cardId) return c;
+        const updatedVotes = hasVoted
+          ? c.votes.filter(vId => vId !== currentUserId)
+          : [...c.votes, currentUserId];
+        return { ...c, votes: updatedVotes };
+      }),
     }));
+
+    try {
+      const result = await toggleCardVoteApi(cardId);
+      setRoom(prev => ({
+        ...prev,
+        cards: prev.cards.map(c =>
+          c.id === cardId ? { ...c, votes: result.votes } : c
+        ),
+      }));
+    } catch (err) {
+      console.error('Failed to toggle vote:', err);
+      // Revert optimistic update
+      setRoom(prev => ({
+        ...prev,
+        cards: prev.cards.map(c => {
+          if (c.id !== cardId) return c;
+          const revertedVotes = hasVoted
+            ? [...c.votes, currentUserId]
+            : c.votes.filter(vId => vId !== currentUserId);
+          return { ...c, votes: revertedVotes };
+        }),
+      }));
+    }
   };
 
   const handleAddActionItem = (cardId: string, text: string, assigneeId: string) => {

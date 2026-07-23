@@ -103,3 +103,9 @@ export async function updateRoomStageApi(
     });
 }
 
+export async function toggleCardVoteApi(cardId: string): Promise<{ votes: string[] }> {
+    return apiRequest<{ votes: string[] }>(`/rooms/cards/${cardId}/vote`, {
+        method: 'POST',
+    });
+}
+

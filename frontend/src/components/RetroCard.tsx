@@ -95,9 +95,9 @@ export default function RetroCard({
         {/* Votes */}
         {(stage === 'voting' || stage === 'discussion') && (
           <button
-            className={`card-vote-btn ${hasVoted ? 'card-vote-btn--voted' : ''} ${canVote ? 'card-vote-btn--can-vote' : ''}`}
-            onClick={() => canVote && onVote(card.id)}
-            disabled={!canVote && !hasVoted}
+            className={`card-vote-btn ${hasVoted ? 'card-vote-btn--voted' : ''} ${stage === 'voting' && (canVote || hasVoted) ? 'card-vote-btn--can-vote' : ''}`}
+            onClick={() => stage === 'voting' && (canVote || hasVoted) && onVote(card.id)}
+            disabled={stage !== 'voting' || (!canVote && !hasVoted)}
             id={`btn-vote-${card.id}`}
           >
             <ThumbsUp size={13} />

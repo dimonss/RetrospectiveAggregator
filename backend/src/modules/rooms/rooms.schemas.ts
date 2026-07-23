@@ -93,6 +93,14 @@ export const deleteCardResponseSchema = z.object({
     success: z.boolean(),
 });
 
+export const toggleVoteParamsSchema = z.object({
+    cardId: z.string(),
+});
+
+export const toggleVoteResponseSchema = z.object({
+    votes: z.array(z.string()),
+});
+
 export type CreateRoomInput = z.infer<typeof createRoomSchema>;
 export type RoomResponse = z.infer<typeof roomResponseSchema>;
 export type RoomDetailResponse = z.infer<typeof roomDetailResponseSchema>;

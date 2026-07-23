@@ -12,6 +12,8 @@ import {
     cardSchema,
     deleteCardParamsSchema,
     deleteCardResponseSchema,
+    toggleVoteParamsSchema,
+    toggleVoteResponseSchema,
     updateCardPositionsSchema,
     updateStageSchema,
     errorResponseSchema,
@@ -23,6 +25,7 @@ import {
     getUserStats,
     addCardToRoom,
     deleteCardFromRoom,
+    toggleCardVote,
     updateCardPositions,
     updateRoomStage,
 } from './rooms.service.js';
@@ -248,6 +251,37 @@ export async function roomsRoutes(app: FastifyInstance) {
             } catch (err: unknown) {
                 const message = err instanceof Error ? err.message : 'Forbidden';
                 return reply.status(403).send({ message });
+            }
+        },
+    );
+
+    // POST /rooms/cards/:cardId/vote - Toggle vote on card
+    typedApp.post(
+        '/rooms/cards/:cardId/vote',
+        {
+            preHandler: [authenticate],
+            schema: {
+                tags: ['Cards'],
+                description: 'Toggle vote on a card (add or remove vote)',
+                security: [{ bearerAuth: [] }],
+                params: toggleVoteParamsSchema,
+                response: {
+                    200: toggleVoteResponseSchema,
+                    400: errorResponseSchema,
+                    401: errorResponseSchema,
+                    404: errorResponseSchema,
+                },
+            },
+        },
+        async (request, reply) => {
+            const user = request.currentUser!;
+            const { cardId } = request.params as { cardId: string };
+            try {
+                const result = await toggleCardVote(cardId, user);
+                return reply.send(result);
+            } catch (err: unknown) {
+                const message = err instanceof Error ? err.message : 'Error voting on card';
+                return reply.status(400).send({ message });
             }
         },
     );

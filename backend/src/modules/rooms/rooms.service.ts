@@ -1,4 +1,4 @@
-import { eq, count } from 'drizzle-orm';
+import { eq, count, and } from 'drizzle-orm';
 import { getDb } from '../../db/connection.js';
 import { retroRooms, retroParticipants, retroCards, retroVotes, userProfiles } from '../../db/schema.js';
 import type { CreateRoomInput, RoomResponse, RoomDetailResponse, CardResponse, CreateCardInput, RoomStatsResponse, UpdateCardPositionsInput } from './rooms.schemas.js';
@@ -419,4 +419,79 @@ export async function getUserStats(userId: string): Promise<RoomStatsResponse> {
         totalParticipants,
         totalCards,
     };
+}
+
+export async function toggleCardVote(
+    cardId: string,
+    userProfile: typeof userProfiles.$inferSelect,
+): Promise<{ votes: string[] }> {
+    const db = getDb();
+
+    const card = db
+        .select()
+        .from(retroCards)
+        .where(eq(retroCards.id, cardId))
+        .get();
+
+    if (!card) {
+        throw new Error('Card not found');
+    }
+
+    const room = db
+        .select()
+        .from(retroRooms)
+        .where(eq(retroRooms.id, card.roomId))
+        .get();
+
+    if (!room) {
+        throw new Error('Room not found');
+    }
+
+    if (room.stage !== 'voting') {
+        throw new Error('Voting is only allowed during voting stage');
+    }
+
+    // Check if user already voted for this card
+    const existingVote = db
+        .select()
+        .from(retroVotes)
+        .where(and(eq(retroVotes.cardId, cardId), eq(retroVotes.userId, userProfile.id)))
+        .get();
+
+    if (existingVote) {
+        // Remove vote
+        db.delete(retroVotes)
+            .where(eq(retroVotes.id, existingVote.id))
+            .run();
+    } else {
+        // Count user's votes in this room across all cards
+        const userRoomVotes = db
+            .select({ id: retroVotes.id })
+            .from(retroVotes)
+            .innerJoin(retroCards, eq(retroVotes.cardId, retroCards.id))
+            .where(and(eq(retroCards.roomId, room.id), eq(retroVotes.userId, userProfile.id)))
+            .all();
+
+        if (userRoomVotes.length >= 5) {
+            throw new Error('No votes left (maximum 5 votes per user)');
+        }
+
+        // Add vote
+        db.insert(retroVotes)
+            .values({
+                cardId,
+                userId: userProfile.id,
+            })
+            .run();
+    }
+
+    // Fetch updated votes for the card
+    const updatedVotes = db
+        .select({ userId: retroVotes.userId })
+        .from(retroVotes)
+        .where(eq(retroVotes.cardId, cardId))
+        .all()
+        .map(v => v.userId);
+
+    return { votes: updatedVotes };
 }
