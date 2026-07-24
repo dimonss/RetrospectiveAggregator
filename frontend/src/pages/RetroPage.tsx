@@ -601,6 +601,7 @@ export default function RetroPage() {
               <RetroCardComponent
                 card={activeCard}
                 stage={room.stage}
+                isFacilitator={isFacilitator}
                 currentUserId={user?.id || 'u1'}
                 userVotesLeft={0}
                 columnColor={activeColumn.color}

@@ -124,7 +124,7 @@ export default function RetroCard({
               <Plus size={14} />
             </button>
           )}
-          {isMine && (
+          {(isMine || isFacilitator) && (
             <button
               className="card-action-btn card-action-btn--danger"
               onClick={() => onDelete(card.id)}
