@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import {
   DndContext,
@@ -27,6 +27,7 @@ import StageIndicator from '../components/StageIndicator';
 import RetroColumn from '../components/RetroColumn';
 import RetroCardComponent from '../components/RetroCard';
 import ThemeToggle from '../components/ThemeToggle';
+import UndoSnackbar from '../components/UndoSnackbar';
 import './RetroPage.css';
 
 const STAGE_ORDER: Stage[] = ['brainstorming', 'grouping', 'voting', 'discussion', 'completed'];
@@ -59,6 +60,19 @@ const STAGE_HINTS: Record<Stage, { title: string; hint: string; emoji: string }>
   },
 };
 
+type PendingDeletion =
+  | {
+      type: 'card';
+      card: RetroCard;
+      index: number;
+    }
+  | {
+      type: 'actionItem';
+      cardId: string;
+      actionItem: ActionItem;
+      index: number;
+    };
+
 export default function RetroPage() {
   const { id } = useParams();
   const { user } = useAuth();
@@ -68,6 +82,16 @@ export default function RetroPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
+  const [pendingDeletion, setPendingDeletion] = useState<PendingDeletion | null>(null);
+  const pendingDeletionRef = useRef<PendingDeletion | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (pendingDeletionRef.current) {
+        commitPendingDeletion(pendingDeletionRef.current);
+      }
+    };
+  }, []);
 
   const sensors = useSensors(useSensor(PointerSensor, {
     activationConstraint: { distance: 8 },
@@ -209,13 +233,36 @@ export default function RetroPage() {
     }
   };
 
-  const handleDeleteCard = async (cardId: string) => {
+  const commitPendingDeletion = async (pending: PendingDeletion) => {
     try {
-      await deleteCardApi(cardId);
-      setRoom(prev => ({ ...prev, cards: prev.cards.filter(c => c.id !== cardId) }));
+      if (pending.type === 'card') {
+        await deleteCardApi(pending.card.id);
+      } else if (pending.type === 'actionItem') {
+        await deleteActionItemApi(pending.actionItem.id);
+      }
     } catch (err) {
-      console.error('Failed to delete card:', err);
+      console.error('Failed to commit pending deletion:', err);
     }
+  };
+
+  const handleDeleteCard = (cardId: string) => {
+    const cardToDelete = room.cards.find(c => c.id === cardId);
+    if (!cardToDelete) return;
+    const index = room.cards.findIndex(c => c.id === cardId);
+
+    if (pendingDeletionRef.current) {
+      commitPendingDeletion(pendingDeletionRef.current);
+    }
+
+    setRoom(prev => ({ ...prev, cards: prev.cards.filter(c => c.id !== cardId) }));
+
+    const nextPending: PendingDeletion = {
+      type: 'card',
+      card: cardToDelete,
+      index,
+    };
+    pendingDeletionRef.current = nextPending;
+    setPendingDeletion(nextPending);
   };
 
 
@@ -311,7 +358,27 @@ export default function RetroPage() {
     }
   };
 
-  const handleDeleteActionItem = async (actionItemId: string) => {
+  const handleDeleteActionItem = (actionItemId: string) => {
+    let parentCardId = '';
+    let foundItem: ActionItem | undefined;
+    let itemIndex = -1;
+
+    for (const c of room.cards) {
+      const idx = (c.actionItems || []).findIndex(ai => ai.id === actionItemId);
+      if (idx !== -1) {
+        parentCardId = c.id;
+        foundItem = c.actionItems![idx];
+        itemIndex = idx;
+        break;
+      }
+    }
+
+    if (!foundItem || !parentCardId) return;
+
+    if (pendingDeletionRef.current) {
+      commitPendingDeletion(pendingDeletionRef.current);
+    }
+
     setRoom(prev => ({
       ...prev,
       cards: prev.cards.map(c => ({
@@ -320,10 +387,52 @@ export default function RetroPage() {
       })),
     }));
 
-    try {
-      await deleteActionItemApi(actionItemId);
-    } catch (err) {
-      console.error('Failed to delete action item:', err);
+    const nextPending: PendingDeletion = {
+      type: 'actionItem',
+      cardId: parentCardId,
+      actionItem: foundItem,
+      index: itemIndex,
+    };
+    pendingDeletionRef.current = nextPending;
+    setPendingDeletion(nextPending);
+  };
+
+  const handleUndo = () => {
+    const pending = pendingDeletionRef.current;
+    if (!pending) return;
+
+    if (pending.type === 'card') {
+      const { card, index } = pending;
+      setRoom(prev => {
+        const newCards = [...prev.cards];
+        const insertAt = Math.min(index, newCards.length);
+        newCards.splice(insertAt, 0, card);
+        return { ...prev, cards: newCards };
+      });
+    } else if (pending.type === 'actionItem') {
+      const { cardId, actionItem, index } = pending;
+      setRoom(prev => ({
+        ...prev,
+        cards: prev.cards.map(c => {
+          if (c.id !== cardId) return c;
+          const currentItems = [...(c.actionItems || [])];
+          const insertAt = Math.min(index, currentItems.length);
+          currentItems.splice(insertAt, 0, actionItem);
+          return { ...c, actionItems: currentItems };
+        }),
+      }));
+    }
+
+    pendingDeletionRef.current = null;
+    setPendingDeletion(null);
+  };
+
+  const handleTimeout = () => {
+    const pending = pendingDeletionRef.current;
+    if (pending) {
+      commitPendingDeletion(pending);
+      pendingDeletionRef.current = null;
+      setPendingDeletion(null);
     }
   };
 
@@ -632,6 +741,19 @@ export default function RetroPage() {
           </div>
         ))}
       </div>
+
+      {pendingDeletion && (
+        <UndoSnackbar
+          message={
+            pendingDeletion.type === 'card'
+              ? `Карточка «${pendingDeletion.card.text.slice(0, 25)}${pendingDeletion.card.text.length > 25 ? '...' : ''}» удалена`
+              : `Задача «${pendingDeletion.actionItem.text.slice(0, 25)}${pendingDeletion.actionItem.text.length > 25 ? '...' : ''}» удалена`
+          }
+          onUndo={handleUndo}
+          onTimeout={handleTimeout}
+          durationMs={5000}
+        />
+      )}
     </div>
   );
 }

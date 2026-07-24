@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Check, Copy, ArrowLeft, CheckSquare, Loader2, Home, Trash2 } from 'lucide-react';
 import { MOCK_ROOM, MOCK_USERS, type ActionItem, type RetroRoom } from '../mocks/data';
 import { getRoomApi, toggleActionItemDoneApi, deleteActionItemApi } from '../api/rooms';
 import { useAuth } from '../context/AuthContext';
 import ThemeToggle from '../components/ThemeToggle';
+import UndoSnackbar from '../components/UndoSnackbar';
 import './SummaryPage.css';
 
 function buildSummaryData(room: RetroRoom) {
@@ -43,6 +44,12 @@ function generateMarkdown(
   return lines.join('\n');
 }
 
+interface PendingItemDeletion {
+  cardId: string;
+  actionItem: ActionItem;
+  index: number;
+}
+
 export default function SummaryPage() {
   const { id } = useParams();
   const { user } = useAuth();
@@ -50,6 +57,16 @@ export default function SummaryPage() {
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
   const [room, setRoom] = useState<RetroRoom>(MOCK_ROOM);
   const [isLoading, setIsLoading] = useState(true);
+  const [pendingDeletion, setPendingDeletion] = useState<PendingItemDeletion | null>(null);
+  const pendingDeletionRef = useRef<PendingItemDeletion | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (pendingDeletionRef.current) {
+        deleteActionItemApi(pendingDeletionRef.current.actionItem.id).catch(console.error);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (id) {
@@ -120,7 +137,35 @@ export default function SummaryPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleDeleteActionItem = async (actionItemId: string) => {
+  const commitPendingDeletion = async (pending: PendingItemDeletion) => {
+    try {
+      await deleteActionItemApi(pending.actionItem.id);
+    } catch (err) {
+      console.error('Failed to commit deletion:', err);
+    }
+  };
+
+  const handleDeleteActionItem = (actionItemId: string) => {
+    let parentCardId = '';
+    let foundItem: ActionItem | undefined;
+    let itemIndex = -1;
+
+    for (const c of room.cards) {
+      const idx = (c.actionItems || []).findIndex(ai => ai.id === actionItemId);
+      if (idx !== -1) {
+        parentCardId = c.id;
+        foundItem = c.actionItems![idx];
+        itemIndex = idx;
+        break;
+      }
+    }
+
+    if (!foundItem || !parentCardId) return;
+
+    if (pendingDeletionRef.current) {
+      commitPendingDeletion(pendingDeletionRef.current);
+    }
+
     setRoom(prev => ({
       ...prev,
       cards: prev.cards.map(c => ({
@@ -129,10 +174,41 @@ export default function SummaryPage() {
       })),
     }));
 
-    try {
-      await deleteActionItemApi(actionItemId);
-    } catch (err) {
-      console.error('Failed to delete action item:', err);
+    const nextPending: PendingItemDeletion = {
+      cardId: parentCardId,
+      actionItem: foundItem,
+      index: itemIndex,
+    };
+    pendingDeletionRef.current = nextPending;
+    setPendingDeletion(nextPending);
+  };
+
+  const handleUndo = () => {
+    const pending = pendingDeletionRef.current;
+    if (!pending) return;
+
+    const { cardId, actionItem, index } = pending;
+    setRoom(prev => ({
+      ...prev,
+      cards: prev.cards.map(c => {
+        if (c.id !== cardId) return c;
+        const currentItems = [...(c.actionItems || [])];
+        const insertAt = Math.min(index, currentItems.length);
+        currentItems.splice(insertAt, 0, actionItem);
+        return { ...c, actionItems: currentItems };
+      }),
+    }));
+
+    pendingDeletionRef.current = null;
+    setPendingDeletion(null);
+  };
+
+  const handleTimeout = () => {
+    const pending = pendingDeletionRef.current;
+    if (pending) {
+      commitPendingDeletion(pending);
+      pendingDeletionRef.current = null;
+      setPendingDeletion(null);
     }
   };
 
@@ -356,6 +432,15 @@ export default function SummaryPage() {
           </div>
         </div>
       </main>
+
+      {pendingDeletion && (
+        <UndoSnackbar
+          message={`Задача «${pendingDeletion.actionItem.text.slice(0, 25)}${pendingDeletion.actionItem.text.length > 25 ? '...' : ''}» удалена`}
+          onUndo={handleUndo}
+          onTimeout={handleTimeout}
+          durationMs={5000}
+        />
+      )}
     </div>
   );
 }
