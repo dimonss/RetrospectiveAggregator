@@ -246,6 +246,16 @@ body::after {
   transform: translateY(0);
 }
 
+.btn-danger {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.35);
+  color: #ffffff;
+}
+
+.btn-danger:hover {
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5);
+}
+
 .btn-secondary {
   display: inline-flex;
   align-items: center;

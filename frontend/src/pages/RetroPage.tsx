@@ -71,6 +71,11 @@ type PendingDeletion =
       cardId: string;
       actionItem: ActionItem;
       index: number;
+    }
+  | {
+      type: 'room';
+      roomId: string;
+      roomName: string;
     };
 
 export default function RetroPage() {
@@ -239,6 +244,9 @@ export default function RetroPage() {
         await deleteCardApi(pending.card.id);
       } else if (pending.type === 'actionItem') {
         await deleteActionItemApi(pending.actionItem.id);
+      } else if (pending.type === 'room') {
+        await deleteRoomApi(pending.roomId);
+        navigate('/dashboard');
       }
     } catch (err) {
       console.error('Failed to commit pending deletion:', err);
@@ -438,8 +446,19 @@ export default function RetroPage() {
 
   const handleDeleteRoomCurrent = () => {
     if (!id) return;
-    deleteRoomApi(id).catch(console.error);
-    navigate('/dashboard');
+
+    if (pendingDeletionRef.current) {
+      commitPendingDeletion(pendingDeletionRef.current);
+    }
+
+    const nextPending: PendingDeletion = {
+      type: 'room',
+      roomId: id,
+      roomName: room.name,
+    };
+
+    pendingDeletionRef.current = nextPending;
+    setPendingDeletion(nextPending);
   };
 
   const handleNextStage = () => {
@@ -766,7 +785,9 @@ export default function RetroPage() {
           message={
             pendingDeletion.type === 'card'
               ? `Карточка «${pendingDeletion.card.text.slice(0, 25)}${pendingDeletion.card.text.length > 25 ? '...' : ''}» удалена`
-              : `Задача «${pendingDeletion.actionItem.text.slice(0, 25)}${pendingDeletion.actionItem.text.length > 25 ? '...' : ''}» удалена`
+              : pendingDeletion.type === 'actionItem'
+              ? `Задача «${pendingDeletion.actionItem.text.slice(0, 25)}${pendingDeletion.actionItem.text.length > 25 ? '...' : ''}» удалена`
+              : `Ретроспектива «${pendingDeletion.roomName}» удалена`
           }
           onUndo={handleUndo}
           onTimeout={handleTimeout}
