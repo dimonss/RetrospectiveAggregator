@@ -21,6 +21,7 @@ interface SortableCardProps {
   userVotesLeft: number;
   columnColor: string;
   cardIndex: number;
+  isDeleting?: boolean;
   participants?: User[];
   onVote: (cardId: string) => void;
   onDelete: (cardId: string) => void;
@@ -42,7 +43,7 @@ function SortableCard(props: SortableCardProps) {
 
   return (
     <div ref={setNodeRef} style={style} {...(isDraggable ? { ...attributes, ...listeners } : {})}>
-      <RetroCardComponent {...props} isDragging={isDragging} />
+      <RetroCardComponent {...props} isDragging={isDragging} isDeleting={props.isDeleting} />
     </div>
   );
 }
@@ -55,6 +56,7 @@ interface Props {
   currentUserId: string;
   anonymousMode: boolean;
   userVotesLeft: number;
+  deletingCardIds?: Set<string>;
   participants?: User[];
   onAddCard: (text: string, columnId: string, isAnonymous: boolean) => void;
   onVote: (cardId: string) => void;
@@ -65,7 +67,7 @@ interface Props {
 
 export default function RetroColumn({
   column, cards, stage, isFacilitator, currentUserId, anonymousMode,
-  userVotesLeft, participants, onAddCard, onVote, onDeleteCard, onAddActionItem, onDeleteActionItem
+  userVotesLeft, deletingCardIds, participants, onAddCard, onVote, onDeleteCard, onAddActionItem, onDeleteActionItem
 }: Props) {
   const { setNodeRef, isOver } = useDroppable({ id: column.id });
 
@@ -105,6 +107,7 @@ export default function RetroColumn({
               userVotesLeft={userVotesLeft}
               columnColor={column.color}
               cardIndex={index}
+              isDeleting={deletingCardIds?.has(card.id)}
               participants={participants}
               onVote={onVote}
               onDelete={onDeleteCard}

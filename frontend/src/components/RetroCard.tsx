@@ -22,12 +22,13 @@ interface Props {
   onAddActionItem: (cardId: string, text: string, assigneeId: string) => void;
   onDeleteActionItem?: (actionItemId: string) => void;
   isDragging?: boolean;
+  isDeleting?: boolean;
 }
 
 export default function RetroCard({
   card, stage, isFacilitator, currentUserId, userVotesLeft,
   columnColor, cardIndex, isGrouped, participants,
-  onVote, onDelete, onAddActionItem, onDeleteActionItem, isDragging
+  onVote, onDelete, onAddActionItem, onDeleteActionItem, isDragging, isDeleting
 }: Props) {
   const { user: currentUser } = useAuth();
   const colorIdx = cardIndex % NOTE_COLORS.length;
@@ -42,6 +43,9 @@ export default function RetroCard({
   const [actionText, setActionText] = useState('');
   const [assigneeId, setAssigneeId] = useState(currentUserId);
   const [showActions, setShowActions] = useState(false);
+  const [isDeletingLocal, setIsDeletingLocal] = useState(false);
+
+  const isDeletingCard = isDeleting || isDeletingLocal;
 
   const author = (currentUser && card.authorId === currentUser.id)
     ? currentUser
@@ -60,14 +64,22 @@ export default function RetroCard({
     }
   };
 
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isDeletingCard) return;
+    setIsDeletingLocal(true);
+    onDelete(card.id);
+  };
+
   return (
     <div
       className={[
         'retro-card',
         isDragging ? 'retro-card--dragging' : '',
+        isDeletingCard ? 'retro-card--deleting' : '',
         isGrouped ? 'retro-card--grouped' : '',
         isMine ? 'retro-card--mine' : '',
-      ].join(' ')}
+      ].filter(Boolean).join(' ')}
       style={{ '--note-color': bgColor, '--note-text': textColor } as React.CSSProperties}
     >
       {/* Mine badge */}
@@ -104,7 +116,7 @@ export default function RetroCard({
           <button
             className={`card-vote-btn ${hasVoted ? 'card-vote-btn--voted' : ''} ${stage === 'voting' && (canVote || hasVoted) ? 'card-vote-btn--can-vote' : ''}`}
             onClick={() => stage === 'voting' && (canVote || hasVoted) && onVote(card.id)}
-            disabled={stage !== 'voting' || (!canVote && !hasVoted)}
+            disabled={stage !== 'voting' || (!canVote && !hasVoted) || isDeletingCard}
             id={`btn-vote-${card.id}`}
           >
             <ThumbsUp size={13} />
@@ -118,6 +130,7 @@ export default function RetroCard({
             <button
               className="card-action-btn"
               onClick={() => setShowActionForm(!showActionForm)}
+              disabled={isDeletingCard}
               id={`btn-add-action-${card.id}`}
               title="Добавить задачу"
             >
@@ -127,7 +140,8 @@ export default function RetroCard({
           {(isMine || isFacilitator) && (
             <button
               className="card-action-btn card-action-btn--danger"
-              onClick={() => onDelete(card.id)}
+              onClick={handleDeleteClick}
+              disabled={isDeletingCard}
               id={`btn-delete-${card.id}`}
               title="Удалить"
             >

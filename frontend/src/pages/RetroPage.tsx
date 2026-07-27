@@ -88,6 +88,7 @@ export default function RetroPage() {
   const [copied, setCopied] = useState(false);
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
   const [pendingDeletion, setPendingDeletion] = useState<PendingDeletion | null>(null);
+  const [deletingCardIds, setDeletingCardIds] = useState<Set<string>>(new Set());
   const pendingDeletionRef = useRef<PendingDeletion | null>(null);
 
   useEffect(() => {
@@ -254,23 +255,33 @@ export default function RetroPage() {
   };
 
   const handleDeleteCard = (cardId: string) => {
+    if (deletingCardIds.has(cardId)) return;
     const cardToDelete = room.cards.find(c => c.id === cardId);
     if (!cardToDelete) return;
     const index = room.cards.findIndex(c => c.id === cardId);
+
+    setDeletingCardIds(prev => new Set(prev).add(cardId));
 
     if (pendingDeletionRef.current) {
       commitPendingDeletion(pendingDeletionRef.current);
     }
 
-    setRoom(prev => ({ ...prev, cards: prev.cards.filter(c => c.id !== cardId) }));
+    setTimeout(() => {
+      setRoom(prev => ({ ...prev, cards: prev.cards.filter(c => c.id !== cardId) }));
+      setDeletingCardIds(prev => {
+        const next = new Set(prev);
+        next.delete(cardId);
+        return next;
+      });
 
-    const nextPending: PendingDeletion = {
-      type: 'card',
-      card: cardToDelete,
-      index,
-    };
-    pendingDeletionRef.current = nextPending;
-    setPendingDeletion(nextPending);
+      const nextPending: PendingDeletion = {
+        type: 'card',
+        card: cardToDelete,
+        index,
+      };
+      pendingDeletionRef.current = nextPending;
+      setPendingDeletion(nextPending);
+    }, 350);
   };
 
 
@@ -731,6 +742,7 @@ export default function RetroPage() {
                   currentUserId={user?.id || 'u1'}
                   anonymousMode={room.anonymousMode}
                   userVotesLeft={votesLeft}
+                  deletingCardIds={deletingCardIds}
                   participants={room.participants && room.participants.length > 0 ? room.participants : MOCK_USERS}
                   onAddCard={handleAddCard}
                   onVote={handleVote}
