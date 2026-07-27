@@ -69,65 +69,135 @@ async function refreshAccessToken(): Promise<boolean> {
 }
 
 import { notifyNetworkError } from '../context/OfflineContext';
+import { showGlobalToast } from '../context/ToastContext';
+
+export interface ApiRequestOptions extends RequestInit {
+    retries?: number;
+    retryDelay?: number;
+    silentError?: boolean;
+}
+
+function isRetryableError(response?: Response, isNetworkErr?: boolean): boolean {
+    if (isNetworkErr) return true;
+    if (!response) return true;
+    // Retry on 5xx Server Errors or 429 Too Many Requests
+    return response.status >= 500 || response.status === 429;
+}
 
 export async function apiRequest<T>(
     path: string,
-    options: RequestInit = {},
+    options: ApiRequestOptions = {},
 ): Promise<T> {
-    const { accessToken } = getTokens();
+    const maxRetries = options.retries ?? 3;
+    const retryDelay = options.retryDelay ?? 10000; // 10 seconds default interval
+    const silentError = options.silentError ?? false;
 
-    const headers: Record<string, string> = {
-        ...(options.body ? { 'Content-Type': 'application/json' } : {}),
-        ...((options.headers as Record<string, string>) || {}),
-    };
+    let attempt = 0;
 
-    if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`;
-    }
+    while (attempt <= maxRetries) {
+        const { accessToken } = getTokens();
 
-    let response: Response;
-    try {
-        response = await fetch(`${API_BASE}${path}`, {
-            ...options,
-            headers,
-        });
-    } catch (err) {
-        notifyNetworkError();
-        throw new Error('Отсутствует подключение к сети');
-    }
+        const headers: Record<string, string> = {
+            ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+            ...((options.headers as Record<string, string>) || {}),
+        };
 
-    // Auto-refresh on 401
-    if (response.status === 401) {
-        const { refreshToken } = getTokens();
-        if (refreshToken) {
-            const refreshed = await refreshAccessToken();
-            if (refreshed) {
-                const newTokens = getTokens();
-                headers['Authorization'] = `Bearer ${newTokens.accessToken}`;
-                try {
-                    response = await fetch(`${API_BASE}${path}`, {
-                        ...options,
-                        headers,
-                    });
-                } catch (err) {
-                    notifyNetworkError();
-                    throw new Error('Отсутствует подключение к сети');
+        if (accessToken) {
+            headers['Authorization'] = `Bearer ${accessToken}`;
+        }
+
+        let response: Response | undefined = undefined;
+        let isNetworkError = false;
+
+        try {
+            response = await fetch(`${API_BASE}${path}`, {
+                ...options,
+                headers,
+            });
+        } catch (err) {
+            isNetworkError = true;
+            notifyNetworkError();
+        }
+
+        // Handle 401 token refresh if applicable
+        if (response && response.status === 401) {
+            const { refreshToken } = getTokens();
+            if (refreshToken) {
+                const refreshed = await refreshAccessToken();
+                if (refreshed) {
+                    const newTokens = getTokens();
+                    headers['Authorization'] = `Bearer ${newTokens.accessToken}`;
+                    try {
+                        response = await fetch(`${API_BASE}${path}`, {
+                            ...options,
+                            headers,
+                        });
+                        isNetworkError = false;
+                    } catch (err) {
+                        isNetworkError = true;
+                        notifyNetworkError();
+                    }
                 }
+            }
+
+            if (response && response.status === 401) {
+                handleUnauthorized();
             }
         }
 
-        if (response.status === 401) {
-            handleUnauthorized();
+        // If request succeeded (2xx)
+        if (response && response.ok) {
+            return response.json() as Promise<T>;
         }
+
+        // Check if we should retry
+        const canRetry = attempt < maxRetries && isRetryableError(response, isNetworkError);
+
+        if (canRetry) {
+            attempt++;
+            const delayMs = retryDelay;
+
+            if (!silentError) {
+                showGlobalToast({
+                    type: 'warning',
+                    title: 'Временный сбой связи',
+                    message: `Не удалось выполнить запрос к серверу. Следующая попытка (${attempt}/${maxRetries}) через 10 секунд...`,
+                    duration: delayMs - 500,
+                });
+            }
+
+            await new Promise((resolve) => setTimeout(resolve, delayMs));
+            continue;
+        }
+
+        // If we reach here, request failed and retries (if any) are exhausted
+        let errorMessage = 'Ошибка соединения с сервером';
+        if (response) {
+            const errData = await response.json().catch(() => ({ message: `Ошибка сервера (код ${response.status})` })) as { message?: string };
+            errorMessage = errData.message || `Ошибка ${response.status}`;
+        }
+
+        if (!silentError) {
+            showGlobalToast({
+                type: 'error',
+                title: 'Ошибка операции',
+                message: errorMessage,
+                duration: 6000,
+                action: {
+                    label: 'Повторить',
+                    onClick: () => {
+                        apiRequest<T>(path, options).catch(() => {});
+                    },
+                },
+            });
+        }
+
+        throw new Error(errorMessage);
     }
 
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: 'Ошибка запроса' })) as { message: string };
-        throw new Error(error.message);
-    }
-
-    return response.json() as Promise<T>;
+    throw new Error('Превышено количество попыток подключения');
 }
 
 export { setTokens, getTokens };
+
 
