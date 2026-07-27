@@ -1,4 +1,4 @@
-CREATE TABLE `retro_cards` (
+CREATE TABLE IF NOT EXISTS `retro_cards` (
 	`id` text PRIMARY KEY NOT NULL,
 	`room_id` text NOT NULL,
 	`column_id` text NOT NULL,
@@ -12,7 +12,7 @@ CREATE TABLE `retro_cards` (
 	FOREIGN KEY (`author_id`) REFERENCES `user_profiles`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE TABLE `retro_votes` (
+CREATE TABLE IF NOT EXISTS `retro_votes` (
 	`id` text PRIMARY KEY NOT NULL,
 	`card_id` text NOT NULL,
 	`user_id` text NOT NULL,

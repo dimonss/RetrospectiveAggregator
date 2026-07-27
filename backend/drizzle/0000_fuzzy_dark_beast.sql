@@ -1,4 +1,4 @@
-CREATE TABLE `user_profiles` (
+CREATE TABLE IF NOT EXISTS `user_profiles` (
 	`id` text PRIMARY KEY NOT NULL,
 	`auth_user_id` text NOT NULL,
 	`telegram_id` text,
@@ -12,4 +12,4 @@ CREATE TABLE `user_profiles` (
 	`updated_at` text
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `user_profiles_auth_user_id_unique` ON `user_profiles` (`auth_user_id`);
+CREATE UNIQUE INDEX IF NOT EXISTS `user_profiles_auth_user_id_unique` ON `user_profiles` (`auth_user_id`);

@@ -1,4 +1,4 @@
-CREATE TABLE `retro_rooms` (
+CREATE TABLE IF NOT EXISTS `retro_rooms` (
 	`id` text PRIMARY KEY NOT NULL,
 	`name` text NOT NULL,
 	`template` text NOT NULL,
@@ -10,7 +10,7 @@ CREATE TABLE `retro_rooms` (
 	FOREIGN KEY (`facilitator_id`) REFERENCES `user_profiles`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
-CREATE TABLE `retro_participants` (
+CREATE TABLE IF NOT EXISTS `retro_participants` (
 	`id` text PRIMARY KEY NOT NULL,
 	`room_id` text NOT NULL,
 	`user_id` text NOT NULL,
