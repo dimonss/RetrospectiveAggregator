@@ -19,25 +19,52 @@ export function clearTokens() {
     localStorage.removeItem('refreshToken');
 }
 
+let refreshPromise: Promise<boolean> | null = null;
+type UnauthorizedHandler = () => void;
+let onUnauthorizedCallback: UnauthorizedHandler | null = null;
+
+export function setOnUnauthorized(callback: UnauthorizedHandler | null) {
+    onUnauthorizedCallback = callback;
+}
+
+function handleUnauthorized() {
+    clearTokens();
+    if (onUnauthorizedCallback) {
+        onUnauthorizedCallback();
+    }
+}
+
 async function refreshAccessToken(): Promise<boolean> {
     const { refreshToken } = getTokens();
     if (!refreshToken) return false;
 
-    try {
-        const response = await fetch(`${API_BASE}/auth/refresh`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ refreshToken }),
-        });
-
-        if (!response.ok) return false;
-
-        const data = await response.json() as { accessToken: string; refreshToken: string };
-        setTokens(data.accessToken, data.refreshToken);
-        return true;
-    } catch {
-        return false;
+    if (refreshPromise) {
+        return refreshPromise;
     }
+
+    refreshPromise = (async () => {
+        try {
+            const response = await fetch(`${API_BASE}/auth/refresh`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ refreshToken }),
+            });
+
+            if (!response.ok) return false;
+
+            const data = await response.json() as { accessToken: string; refreshToken: string };
+            if (!data.accessToken || !data.refreshToken) return false;
+
+            setTokens(data.accessToken, data.refreshToken);
+            return true;
+        } catch {
+            return false;
+        } finally {
+            refreshPromise = null;
+        }
+    })();
+
+    return refreshPromise;
 }
 
 export async function apiRequest<T>(
@@ -61,15 +88,22 @@ export async function apiRequest<T>(
     });
 
     // Auto-refresh on 401
-    if (response.status === 401 && accessToken) {
-        const refreshed = await refreshAccessToken();
-        if (refreshed) {
-            const newTokens = getTokens();
-            headers['Authorization'] = `Bearer ${newTokens.accessToken}`;
-            response = await fetch(`${API_BASE}${path}`, {
-                ...options,
-                headers,
-            });
+    if (response.status === 401) {
+        const { refreshToken } = getTokens();
+        if (refreshToken) {
+            const refreshed = await refreshAccessToken();
+            if (refreshed) {
+                const newTokens = getTokens();
+                headers['Authorization'] = `Bearer ${newTokens.accessToken}`;
+                response = await fetch(`${API_BASE}${path}`, {
+                    ...options,
+                    headers,
+                });
+            }
+        }
+
+        if (response.status === 401) {
+            handleUnauthorized();
         }
     }
 
@@ -82,3 +116,4 @@ export async function apiRequest<T>(
 }
 
 export { setTokens, getTokens };
+

@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { User } from '../mocks/data';
 import { getMe, logoutApi, type AuthUser } from '../api/auth';
-import { clearTokens, getTokens } from '../api/client';
+import { clearTokens, getTokens, setOnUnauthorized } from '../api/client';
 
 export interface AuthContextType {
   user: User | null;
@@ -42,6 +42,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       clearTokens();
       setUser(null);
     }
+  }, []);
+
+  useEffect(() => {
+    setOnUnauthorized(() => {
+      setUser(null);
+    });
+    return () => {
+      setOnUnauthorized(null);
+    };
   }, []);
 
   useEffect(() => {
