@@ -146,4 +146,12 @@ export async function deleteActionItemApi(
     });
 }
 
+export async function deleteRoomApi(
+    roomId: string
+): Promise<{ success: boolean }> {
+    return apiRequest<{ success: boolean }>(`/rooms/${roomId}`, {
+        method: 'DELETE',
+    });
+}
+
 

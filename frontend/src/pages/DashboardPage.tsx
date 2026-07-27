@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Users, Clock, ChevronRight, LogOut, Zap, Loader2 } from 'lucide-react';
+import { Plus, Users, Clock, ChevronRight, LogOut, Zap, Loader2, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { type TemplateId } from '../mocks/data';
-import { getRoomsApi, getRoomStatsApi, type RoomApiData, type RoomStatsApiData } from '../api/rooms';
+import { getRoomsApi, getRoomStatsApi, deleteRoomApi, type RoomApiData, type RoomStatsApiData } from '../api/rooms';
 import TemplateModal from '../components/TemplateModal';
 import ThemeToggle from '../components/ThemeToggle';
+import UndoSnackbar from '../components/UndoSnackbar';
 import './DashboardPage.css';
 
 const STAGE_LABELS: Record<string, { label: string; color: string }> = {
@@ -38,6 +39,11 @@ function timeAgo(dateStr: string) {
   return `${days} дней назад`;
 }
 
+interface PendingRoomDeletion {
+  room: RoomApiData;
+  index: number;
+}
+
 export default function DashboardPage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -46,6 +52,16 @@ export default function DashboardPage() {
   const [realStats, setRealStats] = useState<RoomStatsApiData | null>(null);
   const [isLoadingRooms, setIsLoadingRooms] = useState(true);
   const [isLoadingStats, setIsLoadingStats] = useState(true);
+  const [pendingRoomDeletion, setPendingRoomDeletion] = useState<PendingRoomDeletion | null>(null);
+  const pendingRoomDeletionRef = useRef<PendingRoomDeletion | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (pendingRoomDeletionRef.current) {
+        deleteRoomApi(pendingRoomDeletionRef.current.room.id).catch(console.error);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     setIsLoadingRooms(true);
@@ -61,6 +77,60 @@ export default function DashboardPage() {
       .finally(() => setIsLoadingStats(false));
   }, []);
 
+  const commitRoomDeletion = async (pending: PendingRoomDeletion) => {
+    try {
+      await deleteRoomApi(pending.room.id);
+    } catch (err) {
+      console.error('Failed to delete room:', err);
+    }
+  };
+
+  const handleDeleteRoom = (roomId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const roomToDelete = realRooms.find(r => r.id === roomId);
+    if (!roomToDelete) return;
+    const index = realRooms.findIndex(r => r.id === roomId);
+
+    if (pendingRoomDeletionRef.current) {
+      commitRoomDeletion(pendingRoomDeletionRef.current);
+    }
+
+    setRealRooms(prev => prev.filter(r => r.id !== roomId));
+
+    const nextPending: PendingRoomDeletion = {
+      room: roomToDelete,
+      index,
+    };
+    pendingRoomDeletionRef.current = nextPending;
+    setPendingRoomDeletion(nextPending);
+  };
+
+  const handleUndoRoomDeletion = () => {
+    const pending = pendingRoomDeletionRef.current;
+    if (!pending) return;
+
+    setRealRooms(prev => {
+      const updated = [...prev];
+      const insertAt = Math.min(pending.index, updated.length);
+      updated.splice(insertAt, 0, pending.room);
+      return updated;
+    });
+
+    pendingRoomDeletionRef.current = null;
+    setPendingRoomDeletion(null);
+  };
+
+  const handleTimeoutRoomDeletion = () => {
+    const pending = pendingRoomDeletionRef.current;
+    if (pending) {
+      commitRoomDeletion(pending);
+      pendingRoomDeletionRef.current = null;
+      setPendingRoomDeletion(null);
+    }
+  };
+
+  const [roomFilter, setRoomFilter] = useState<'all' | 'created' | 'joined'>('all');
+
   const displayRooms = realRooms.map(r => ({
     id: r.id,
     name: r.name,
@@ -69,7 +139,18 @@ export default function DashboardPage() {
     emoji: TEMPLATE_EMOJIS[r.template as TemplateId] || '🔄',
     participantCount: r.participantCount,
     createdAt: r.createdAt,
+    facilitatorId: r.facilitatorId,
   }));
+
+  const createdCount = displayRooms.filter(r => !r.facilitatorId || r.facilitatorId === user?.id).length;
+  const joinedCount = displayRooms.filter(r => r.facilitatorId && r.facilitatorId !== user?.id).length;
+
+  const filteredRooms = displayRooms.filter(room => {
+    const isOwner = !room.facilitatorId || room.facilitatorId === user?.id;
+    if (roomFilter === 'created') return isOwner;
+    if (roomFilter === 'joined') return !isOwner;
+    return true;
+  });
 
   const displayStats = realStats || { totalSessions: 0, totalActionItems: 0, totalParticipants: 0, totalCards: 0 };
 
@@ -166,8 +247,36 @@ export default function DashboardPage() {
         {/* Rooms */}
         <section className="dashboard-rooms">
           <div className="section-header">
-            <h2>Мои ретроспективы</h2>
-            <span className="badge badge-purple">{displayRooms.length}</span>
+            <div className="section-header-left">
+              <h2>Мои ретроспективы</h2>
+              <span className="badge badge-purple">{filteredRooms.length}</span>
+            </div>
+            <div className="room-filters">
+              <button
+                type="button"
+                className={`filter-btn ${roomFilter === 'all' ? 'active' : ''}`}
+                onClick={() => setRoomFilter('all')}
+                id="btn-filter-all"
+              >
+                Все <span className="filter-count">{displayRooms.length}</span>
+              </button>
+              <button
+                type="button"
+                className={`filter-btn ${roomFilter === 'created' ? 'active' : ''}`}
+                onClick={() => setRoomFilter('created')}
+                id="btn-filter-created"
+              >
+                ⚡ Созданные <span className="filter-count">{createdCount}</span>
+              </button>
+              <button
+                type="button"
+                className={`filter-btn ${roomFilter === 'joined' ? 'active' : ''}`}
+                onClick={() => setRoomFilter('joined')}
+                id="btn-filter-joined"
+              >
+                👥 Участие <span className="filter-count">{joinedCount}</span>
+              </button>
+            </div>
           </div>
           <div className="rooms-grid">
             {isLoadingRooms ? (
@@ -178,8 +287,9 @@ export default function DashboardPage() {
                 <span className="loader-text">Загрузка комнат...</span>
               </div>
             ) : (
-              displayRooms.map((room, index) => {
+              filteredRooms.map((room, index) => {
                 const stage = STAGE_LABELS[room.stage] || STAGE_LABELS.brainstorming;
+                const isOwner = !room.facilitatorId || room.facilitatorId === user?.id;
                 return (
                   <div
                     key={room.id}
@@ -193,16 +303,32 @@ export default function DashboardPage() {
                   >
                     <div className="room-card-top">
                       <div className="room-emoji">{room.emoji}</div>
-                      <span
-                        className="badge"
-                        style={{
-                          background: `${stage.color}20`,
-                          color: stage.color,
-                          border: `1px solid ${stage.color}40`
-                        }}
-                      >
-                        {stage.label}
-                      </span>
+                      <div className="room-card-top-right">
+                        <span className={`badge ${isOwner ? 'badge-owner' : 'badge-participant'}`}>
+                          {isOwner ? '⚡ Создатель' : '👥 Участник'}
+                        </span>
+                        <span
+                          className="badge"
+                          style={{
+                            background: `${stage.color}20`,
+                            color: stage.color,
+                            border: `1px solid ${stage.color}40`
+                          }}
+                        >
+                          {stage.label}
+                        </span>
+                        {isOwner && (
+                          <button
+                            type="button"
+                            className="room-delete-btn tooltip-bottom"
+                            data-tooltip="Удалить ретроспективу"
+                            onClick={(e) => handleDeleteRoom(room.id, e)}
+                            id={`btn-delete-room-${room.id}`}
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        )}
+                      </div>
                     </div>
                     <h3 className="room-name">{room.name}</h3>
                     <p className="room-template">{TEMPLATE_NAMES[room.template as TemplateId] || room.template}</p>
@@ -282,6 +408,15 @@ export default function DashboardPage() {
 
       {showTemplateModal && (
         <TemplateModal onClose={() => setShowTemplateModal(false)} />
+      )}
+
+      {pendingRoomDeletion && (
+        <UndoSnackbar
+          message={`Ретроспектива «${pendingRoomDeletion.room.name}» удалена`}
+          onUndo={handleUndoRoomDeletion}
+          onTimeout={handleTimeoutRoomDeletion}
+          durationMs={5000}
+        />
       )}
     </div>
   );

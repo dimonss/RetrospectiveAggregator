@@ -33,6 +33,7 @@ import {
     addActionItemToCard,
     toggleActionItemDone,
     deleteActionItem,
+    deleteRoom,
 } from './rooms.service.js';
 
 export async function roomsRoutes(app: FastifyInstance) {
@@ -160,6 +161,39 @@ export async function roomsRoutes(app: FastifyInstance) {
                 return reply.send({ success: true });
             } catch (err: unknown) {
                 const message = err instanceof Error ? err.message : 'Forbidden';
+                return reply.status(403).send({ message });
+            }
+        },
+    );
+
+    // DELETE /rooms/:id - Delete room
+    typedApp.delete(
+        '/rooms/:id',
+        {
+            preHandler: [authenticate],
+            schema: {
+                tags: ['Rooms'],
+                description: 'Delete retrospective room (facilitator only)',
+                security: [{ bearerAuth: [] }],
+                response: {
+                    200: z.object({ success: z.boolean() }),
+                    401: errorResponseSchema,
+                    403: errorResponseSchema,
+                    404: errorResponseSchema,
+                },
+            },
+        },
+        async (request, reply) => {
+            const user = request.currentUser!;
+            const { id } = request.params as { id: string };
+            try {
+                const result = await deleteRoom(id, user);
+                return reply.send(result);
+            } catch (err: unknown) {
+                const message = err instanceof Error ? err.message : 'Error deleting room';
+                if (message === 'Room not found') {
+                    return reply.status(404).send({ message });
+                }
                 return reply.status(403).send({ message });
             }
         },

@@ -22,6 +22,7 @@ export const retroRooms = sqliteTable('retro_rooms', {
     stage: text('stage').notNull().$default(() => 'brainstorming'), // 'brainstorming' | 'grouping' | 'voting' | 'discussion' | 'completed'
     facilitatorId: text('facilitator_id').notNull().references(() => userProfiles.id),
     anonymousMode: text('anonymous_mode').notNull().$default(() => 'false'), // 'true' | 'false' stored as text in sqlite
+    deleted: text('deleted').notNull().$default(() => 'false'), // 'true' | 'false' soft delete flag
     createdAt: text('created_at').$defaultFn(() => new Date().toISOString()),
     updatedAt: text('updated_at').$defaultFn(() => new Date().toISOString()),
 });

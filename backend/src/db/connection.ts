@@ -35,6 +35,7 @@ export function initDb(dbPath: string) {
                 stage TEXT NOT NULL DEFAULT 'brainstorming',
                 facilitator_id TEXT NOT NULL REFERENCES user_profiles(id),
                 anonymous_mode TEXT NOT NULL DEFAULT 'false',
+                deleted TEXT NOT NULL DEFAULT 'false',
                 created_at TEXT,
                 updated_at TEXT
             );
@@ -80,6 +81,12 @@ export function initDb(dbPath: string) {
         `);
     } catch {
         // Tables already exist
+    }
+
+    try {
+        sqlite.exec(`ALTER TABLE retro_rooms ADD COLUMN deleted TEXT NOT NULL DEFAULT 'false';`);
+    } catch {
+        // Column already exists
     }
 
     db = drizzle(sqlite, { schema });

@@ -89,7 +89,7 @@ export async function getUserRooms(userId: string): Promise<RoomResponse[]> {
         .select()
         .from(retroRooms)
         .all()
-        .filter(room => roomIds.includes(room.id));
+        .filter(room => roomIds.includes(room.id) && room.deleted !== 'true');
 
     const result: RoomResponse[] = [];
 
@@ -129,7 +129,7 @@ export async function getRoomById(
         .where(eq(retroRooms.id, roomId))
         .get();
 
-    if (!room) {
+    if (!room || room.deleted === 'true') {
         return null;
     }
 
@@ -403,40 +403,48 @@ export async function getUserStats(userId: string): Promise<RoomStatsResponse> {
         };
     }
 
-    const totalSessions = roomIds.length;
-
-    // Get all rooms the user participates in to check templates
+    // Get all non-deleted rooms the user participates in
     const rooms = db
         .select()
         .from(retroRooms)
         .all()
-        .filter(room => roomIds.includes(room.id));
+        .filter(room => roomIds.includes(room.id) && room.deleted !== 'true');
 
-    const wentWellRoomIds = rooms.filter(r => r.template === 'went-well').map(r => r.id);
+    const activeRoomIds = rooms.map(r => r.id);
+    if (activeRoomIds.length === 0) {
+        return {
+            totalSessions: 0,
+            totalActionItems: 0,
+            totalParticipants: 0,
+            totalCards: 0,
+        };
+    }
 
-    // Unique participants count across user's rooms
+    const totalSessions = activeRoomIds.length;
+
+    // Unique participants count across user's active rooms
     const participants = db
         .select({ roomId: retroParticipants.roomId, userId: retroParticipants.userId })
         .from(retroParticipants)
         .all()
-        .filter(p => roomIds.includes(p.roomId));
+        .filter(p => activeRoomIds.includes(p.roomId));
 
     const uniqueParticipantIds = new Set(participants.map(p => p.userId));
     const totalParticipants = uniqueParticipantIds.size;
 
-    // Cards stats across user's rooms
+    // Cards stats across user's active rooms
     const allCards = db
         .select()
         .from(retroCards)
         .all()
-        .filter(c => roomIds.includes(c.roomId));
+        .filter(c => activeRoomIds.includes(c.roomId));
 
     const totalCards = allCards.length;
     const allActionItems = db
         .select()
         .from(retroActionItems)
         .all()
-        .filter(ai => roomIds.includes(ai.roomId));
+        .filter(item => activeRoomIds.includes(item.roomId));
     const totalActionItems = allActionItems.length;
 
     return {
@@ -641,4 +649,30 @@ export async function toggleCardVote(
         .map(v => v.userId);
 
     return { votes: updatedVotes };
+}
+
+export async function deleteRoom(
+    roomId: string,
+    userProfile: typeof userProfiles.$inferSelect,
+): Promise<{ success: boolean }> {
+    const db = getDb();
+
+    const room = db.select().from(retroRooms).where(eq(retroRooms.id, roomId)).get();
+    if (!room || room.deleted === 'true') {
+        throw new Error('Room not found');
+    }
+
+    if (room.facilitatorId !== userProfile.id) {
+        throw new Error('Forbidden: Only room facilitator can delete this room');
+    }
+
+    db.update(retroRooms)
+        .set({
+            deleted: 'true',
+            updatedAt: new Date().toISOString(),
+        })
+        .where(eq(retroRooms.id, roomId))
+        .run();
+
+    return { success: true };
 }

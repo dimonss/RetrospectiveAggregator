@@ -15,14 +15,14 @@ import {
 } from '@dnd-kit/sortable';
 import {
   ArrowRight, Users, Copy, Check,
-  ArrowLeft, Sparkles, Loader2
+  ArrowLeft, Sparkles, Loader2, Trash2
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import {
   MOCK_ROOM, MOCK_USERS, MAX_VOTES,
   type RetroRoom, type RetroCard, type Stage, type ActionItem,
 } from '../mocks/data';
-import { getRoomApi, addCardApi, deleteCardApi, updateCardPositionsApi, updateRoomStageApi, toggleCardVoteApi, addActionItemApi, deleteActionItemApi } from '../api/rooms';
+import { getRoomApi, addCardApi, deleteCardApi, updateCardPositionsApi, updateRoomStageApi, toggleCardVoteApi, addActionItemApi, deleteActionItemApi, deleteRoomApi } from '../api/rooms';
 import StageIndicator from '../components/StageIndicator';
 import RetroColumn from '../components/RetroColumn';
 import RetroCardComponent from '../components/RetroCard';
@@ -436,6 +436,12 @@ export default function RetroPage() {
     }
   };
 
+  const handleDeleteRoomCurrent = () => {
+    if (!id) return;
+    deleteRoomApi(id).catch(console.error);
+    navigate('/dashboard');
+  };
+
   const handleNextStage = () => {
     if (currentStageIdx < STAGE_ORDER.length - 1) {
       const nextStage = STAGE_ORDER[currentStageIdx + 1];
@@ -615,6 +621,19 @@ export default function RetroPage() {
             >
               {copied ? <Check size={16} /> : <Copy size={16} />}
               <span>{copied ? 'Скопировано!' : 'Ссылка'}</span>
+            </button>
+          )}
+
+          {/* Delete room */}
+          {isFacilitator && (
+            <button
+              id="btn-delete-room-header"
+              className="btn-icon tooltip-bottom"
+              style={{ color: '#ef4444' }}
+              onClick={handleDeleteRoomCurrent}
+              data-tooltip="Удалить ретроспективу"
+            >
+              <Trash2 size={18} />
             </button>
           )}
 
