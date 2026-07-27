@@ -57,7 +57,8 @@ async function refreshAccessToken(): Promise<boolean> {
 
             setTokens(data.accessToken, data.refreshToken);
             return true;
-        } catch {
+        } catch (err) {
+            notifyNetworkError();
             return false;
         } finally {
             refreshPromise = null;
@@ -66,6 +67,8 @@ async function refreshAccessToken(): Promise<boolean> {
 
     return refreshPromise;
 }
+
+import { notifyNetworkError } from '../context/OfflineContext';
 
 export async function apiRequest<T>(
     path: string,
@@ -82,10 +85,16 @@ export async function apiRequest<T>(
         headers['Authorization'] = `Bearer ${accessToken}`;
     }
 
-    let response = await fetch(`${API_BASE}${path}`, {
-        ...options,
-        headers,
-    });
+    let response: Response;
+    try {
+        response = await fetch(`${API_BASE}${path}`, {
+            ...options,
+            headers,
+        });
+    } catch (err) {
+        notifyNetworkError();
+        throw new Error('Отсутствует подключение к сети');
+    }
 
     // Auto-refresh on 401
     if (response.status === 401) {
@@ -95,10 +104,15 @@ export async function apiRequest<T>(
             if (refreshed) {
                 const newTokens = getTokens();
                 headers['Authorization'] = `Bearer ${newTokens.accessToken}`;
-                response = await fetch(`${API_BASE}${path}`, {
-                    ...options,
-                    headers,
-                });
+                try {
+                    response = await fetch(`${API_BASE}${path}`, {
+                        ...options,
+                        headers,
+                    });
+                } catch (err) {
+                    notifyNetworkError();
+                    throw new Error('Отсутствует подключение к сети');
+                }
             }
         }
 
