@@ -142,47 +142,56 @@ export default function RetroPage() {
     }
   }, [id]);
 
-  // Polling for live room updates
+  const fetchRoomData = (roomId: string) => {
+    if (pendingDeletionRef.current !== null || deletingCardIds.size > 0) return;
+
+    getRoomApi(roomId)
+      .then((data) => {
+        if (pendingDeletionRef.current !== null || deletingCardIds.size > 0) return;
+
+        setRoom((prev) => {
+          if (activeCardId) return prev; // Do not interrupt drag operation
+          return {
+            ...prev,
+            name: data.name || prev.name,
+            template: data.template || prev.template,
+            stage: data.stage,
+            facilitatorId: data.facilitatorId || prev.facilitatorId,
+            columns: data.columns && data.columns.length > 0 ? data.columns : prev.columns,
+            participants: data.participants || [],
+            participantIds: data.participantIds,
+            cards: data.cards.map((c) => ({
+              id: c.id,
+              text: c.text,
+              authorId: c.authorId,
+              columnId: c.columnId,
+              votes: c.votes,
+              clusterId: c.clusterId || undefined,
+              isAnonymous: c.isAnonymous,
+              actionItems: (c.actionItems || []).map(ai => ({
+                id: ai.id,
+                text: ai.text,
+                assigneeId: ai.assigneeId || '',
+                done: ai.done,
+              })),
+            })),
+          };
+        });
+      })
+      .catch((err) => console.error('Error fetching room:', err));
+  };
+
+  // Polling for live room updates (paused during card deletion operations)
   useEffect(() => {
     if (!id) return;
+    if (pendingDeletion !== null || deletingCardIds.size > 0) return;
 
     const interval = setInterval(() => {
-      getRoomApi(id)
-        .then((data) => {
-          setRoom((prev) => {
-            if (activeCardId) return prev; // Do not interrupt drag operation
-            return {
-              ...prev,
-              name: data.name || prev.name,
-              template: data.template || prev.template,
-              stage: data.stage,
-              facilitatorId: data.facilitatorId || prev.facilitatorId,
-              columns: data.columns && data.columns.length > 0 ? data.columns : prev.columns,
-              participants: data.participants || [],
-              participantIds: data.participantIds,
-              cards: data.cards.map((c) => ({
-                id: c.id,
-                text: c.text,
-                authorId: c.authorId,
-                columnId: c.columnId,
-                votes: c.votes,
-                clusterId: c.clusterId || undefined,
-                isAnonymous: c.isAnonymous,
-                actionItems: (c.actionItems || []).map(ai => ({
-                  id: ai.id,
-                  text: ai.text,
-                  assigneeId: ai.assigneeId || '',
-                  done: ai.done,
-                })),
-              })),
-            };
-          });
-        })
-        .catch((err) => console.error('Error polling room:', err));
+      fetchRoomData(id);
     }, 10000);
 
     return () => clearInterval(interval);
-  }, [id, activeCardId]);
+  }, [id, activeCardId, pendingDeletion, deletingCardIds.size]);
 
   const [activeTabId, setActiveTabId] = useState<string>('');
 
@@ -233,7 +242,10 @@ export default function RetroPage() {
         isAnonymous: createdCard.isAnonymous,
         actionItems: [],
       };
-      setRoom(prev => ({ ...prev, cards: [...prev.cards, newCard] }));
+      setRoom(prev => {
+        if (prev.cards.some(c => c.id === newCard.id)) return prev;
+        return { ...prev, cards: [...prev.cards, newCard] };
+      });
     } catch (err) {
       console.error('Failed to add card:', err);
     }
@@ -248,6 +260,10 @@ export default function RetroPage() {
       } else if (pending.type === 'room') {
         await deleteRoomApi(pending.roomId);
         navigate('/dashboard');
+        return;
+      }
+      if (id) {
+        fetchRoomData(id);
       }
     } catch (err) {
       console.error('Failed to commit pending deletion:', err);
@@ -423,6 +439,7 @@ export default function RetroPage() {
     if (pending.type === 'card') {
       const { card, index } = pending;
       setRoom(prev => {
+        if (prev.cards.some(c => c.id === card.id)) return prev;
         const newCards = [...prev.cards];
         const insertAt = Math.min(index, newCards.length);
         newCards.splice(insertAt, 0, card);
@@ -435,6 +452,7 @@ export default function RetroPage() {
         cards: prev.cards.map(c => {
           if (c.id !== cardId) return c;
           const currentItems = [...(c.actionItems || [])];
+          if (currentItems.some(ai => ai.id === actionItem.id)) return c;
           const insertAt = Math.min(index, currentItems.length);
           currentItems.splice(insertAt, 0, actionItem);
           return { ...c, actionItems: currentItems };
@@ -444,6 +462,11 @@ export default function RetroPage() {
 
     pendingDeletionRef.current = null;
     setPendingDeletion(null);
+
+    // Immediately fetch updated list from backend after undoing deletion
+    if (id) {
+      fetchRoomData(id);
+    }
   };
 
   const handleTimeout = () => {
