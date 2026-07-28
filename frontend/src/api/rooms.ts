@@ -154,4 +154,15 @@ export async function deleteRoomApi(
     });
 }
 
+export async function updateRoomNameApi(
+    roomId: string,
+    name: string
+): Promise<RoomApiData> {
+    return apiRequest<RoomApiData>(`/rooms/${roomId}/name`, {
+        method: 'PATCH',
+        body: JSON.stringify({ name }),
+    });
+}
+
+
 

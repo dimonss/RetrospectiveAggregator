@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Users, Clock, ChevronRight, LogOut, Zap, Loader2, Trash2 } from 'lucide-react';
+import { Plus, Users, Clock, ChevronRight, LogOut, Zap, Loader2, Trash2, Pencil, Check, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { type TemplateId } from '../mocks/data';
-import { getRoomsApi, getRoomStatsApi, deleteRoomApi, type RoomApiData, type RoomStatsApiData } from '../api/rooms';
+import { getRoomsApi, getRoomStatsApi, deleteRoomApi, updateRoomNameApi, type RoomApiData, type RoomStatsApiData } from '../api/rooms';
+
 import TemplateModal from '../components/TemplateModal';
 import ThemeToggle from '../components/ThemeToggle';
 import UndoSnackbar from '../components/UndoSnackbar';
@@ -54,6 +55,42 @@ export default function DashboardPage() {
   const [isLoadingStats, setIsLoadingStats] = useState(true);
   const [pendingRoomDeletion, setPendingRoomDeletion] = useState<PendingRoomDeletion | null>(null);
   const pendingRoomDeletionRef = useRef<PendingRoomDeletion | null>(null);
+
+  const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
+  const [editingRoomName, setEditingRoomName] = useState('');
+  const [isSavingRoomName, setIsSavingRoomName] = useState(false);
+
+  const handleStartEditRoomName = (roomId: string, currentName: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingRoomId(roomId);
+    setEditingRoomName(currentName);
+  };
+
+  const handleSaveRoomName = async (roomId: string, e?: React.MouseEvent | React.FormEvent) => {
+    if (e) e.stopPropagation();
+    const trimmed = editingRoomName.trim();
+    if (!trimmed) return;
+
+    setIsSavingRoomName(true);
+    const previousRooms = [...realRooms];
+    setRealRooms(prev => prev.map(r => r.id === roomId ? { ...r, name: trimmed } : r));
+    setEditingRoomId(null);
+
+    try {
+      await updateRoomNameApi(roomId, trimmed);
+    } catch (err) {
+      console.error('Failed to update room name:', err);
+      setRealRooms(previousRooms);
+    } finally {
+      setIsSavingRoomName(false);
+    }
+  };
+
+  const handleCancelEditRoomName = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingRoomId(null);
+  };
+
 
   useEffect(() => {
     return () => {
@@ -318,19 +355,67 @@ export default function DashboardPage() {
                           {stage.label}
                         </span>
                         {isOwner && (
-                          <button
-                            type="button"
-                            className="room-delete-btn tooltip-bottom"
-                            data-tooltip="Удалить ретроспективу"
-                            onClick={(e) => handleDeleteRoom(room.id, e)}
-                            id={`btn-delete-room-${room.id}`}
-                          >
-                            <Trash2 size={15} />
-                          </button>
+                          <>
+                            <button
+                              type="button"
+                              className="room-edit-btn tooltip-bottom"
+                              data-tooltip="Редактировать название"
+                              onClick={(e) => handleStartEditRoomName(room.id, room.name, e)}
+                              id={`btn-edit-room-${room.id}`}
+                            >
+                              <Pencil size={15} />
+                            </button>
+                            <button
+                              type="button"
+                              className="room-delete-btn tooltip-bottom"
+                              data-tooltip="Удалить ретроспективу"
+                              onClick={(e) => handleDeleteRoom(room.id, e)}
+                              id={`btn-delete-room-${room.id}`}
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </>
                         )}
                       </div>
                     </div>
-                    <h3 className="room-name">{room.name}</h3>
+                    {editingRoomId === room.id ? (
+                      <div className="dashboard-room-name-edit-form" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="text"
+                          className="dashboard-room-name-input"
+                          value={editingRoomName}
+                          onChange={(e) => setEditingRoomName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleSaveRoomName(room.id, e);
+                            if (e.key === 'Escape') handleCancelEditRoomName(e as unknown as React.MouseEvent);
+                          }}
+                          disabled={isSavingRoomName}
+                          autoFocus
+                          maxLength={100}
+                        />
+                        <button
+                          type="button"
+                          className="btn-icon btn-save-name"
+                          onClick={(e) => handleSaveRoomName(room.id, e)}
+                          disabled={isSavingRoomName || !editingRoomName.trim()}
+                          data-tooltip="Сохранить"
+                        >
+                          {isSavingRoomName ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-icon btn-cancel-name"
+                          onClick={handleCancelEditRoomName}
+                          disabled={isSavingRoomName}
+                          data-tooltip="Отмена"
+                        >
+                          <X size={15} />
+                        </button>
+                      </div>
+                    ) : (
+                      <h3 className="room-name">{room.name}</h3>
+                    )}
+
                     <p className="room-template">{TEMPLATE_NAMES[room.template as TemplateId] || room.template}</p>
                     <div className="room-card-footer">
                       <span className="room-meta">

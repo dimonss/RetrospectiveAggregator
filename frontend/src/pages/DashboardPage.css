@@ -298,6 +298,7 @@
   gap: 6px;
 }
 
+.room-edit-btn,
 .room-delete-btn {
   display: inline-flex;
   align-items: center;
@@ -314,15 +315,48 @@
   z-index: 5;
 }
 
+.room-edit-btn:hover {
+  color: var(--accent-primary, #a78bfa);
+  background: rgba(124, 58, 237, 0.15);
+  opacity: 1;
+}
+
 .room-delete-btn:hover {
   color: #ef4444;
   background: rgba(239, 68, 68, 0.15);
   opacity: 1;
 }
 
+.dashboard-room-name-edit-form {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+  z-index: 6;
+}
+
+.dashboard-room-name-input {
+  font-size: 15px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: var(--radius-md, 6px);
+  border: 1px solid var(--border-medium, rgba(255, 255, 255, 0.2));
+  background: var(--bg-surface, rgba(0, 0, 0, 0.25));
+  color: var(--text-primary, #ffffff);
+  outline: none;
+  flex: 1;
+  min-width: 0;
+  transition: border-color 0.15s ease;
+}
+
+.dashboard-room-name-input:focus {
+  border-color: var(--accent-primary, #7c3aed);
+}
+
 .room-emoji {
   font-size: 24px;
 }
+
 
 .room-name {
   font-size: 16px;

@@ -6,6 +6,11 @@ export const createRoomSchema = z.object({
     anonymousMode: z.boolean().default(false),
 });
 
+export const updateRoomNameSchema = z.object({
+    name: z.string().min(1, 'Name is required').max(100, 'Name is too long'),
+});
+
+
 export const roomResponseSchema = z.object({
     id: z.string(),
     name: z.string(),

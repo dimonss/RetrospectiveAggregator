@@ -676,3 +676,55 @@ export async function deleteRoom(
 
     return { success: true };
 }
+
+export async function updateRoomName(
+    roomId: string,
+    userProfile: typeof userProfiles.$inferSelect,
+    name: string,
+): Promise<RoomResponse> {
+    const db = getDb();
+
+    const room = db.select().from(retroRooms).where(eq(retroRooms.id, roomId)).get();
+    if (!room || room.deleted === 'true') {
+        throw new Error('Room not found');
+    }
+
+    if (room.facilitatorId !== userProfile.id) {
+        throw new Error('Forbidden: Only room facilitator can update room name');
+    }
+
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+        throw new Error('Room name cannot be empty');
+    }
+
+    const updatedAt = new Date().toISOString();
+
+    db.update(retroRooms)
+        .set({
+            name: trimmedName,
+            updatedAt,
+        })
+        .where(eq(retroRooms.id, roomId))
+        .run();
+
+    const participantCountRes = db
+        .select({ value: count() })
+        .from(retroParticipants)
+        .where(eq(retroParticipants.roomId, roomId))
+        .get();
+
+    return {
+        id: room.id,
+        name: trimmedName,
+        template: room.template,
+        stage: room.stage,
+        facilitatorId: room.facilitatorId,
+        anonymousMode: room.anonymousMode === 'true',
+        inviteLink: buildInviteLink(room.id),
+        participantCount: participantCountRes?.value || 1,
+        createdAt: room.createdAt || updatedAt,
+        updatedAt,
+    };
+}
+

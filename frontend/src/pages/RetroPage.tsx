@@ -15,14 +15,15 @@ import {
 } from '@dnd-kit/sortable';
 import {
   ArrowRight, Users, Copy, Check,
-  ArrowLeft, Sparkles, Loader2, Trash2
+  ArrowLeft, Sparkles, Loader2, Trash2, Pencil, X
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import {
   MOCK_ROOM, MOCK_USERS, MAX_VOTES,
   type RetroRoom, type RetroCard, type Stage, type ActionItem,
 } from '../mocks/data';
-import { getRoomApi, addCardApi, deleteCardApi, updateCardPositionsApi, updateRoomStageApi, toggleCardVoteApi, addActionItemApi, deleteActionItemApi, deleteRoomApi } from '../api/rooms';
+import { getRoomApi, addCardApi, deleteCardApi, updateCardPositionsApi, updateRoomStageApi, updateRoomNameApi, toggleCardVoteApi, addActionItemApi, deleteActionItemApi, deleteRoomApi } from '../api/rooms';
+
 import StageIndicator from '../components/StageIndicator';
 import RetroColumn from '../components/RetroColumn';
 import RetroCardComponent from '../components/RetroCard';
@@ -90,6 +91,39 @@ export default function RetroPage() {
   const [pendingDeletion, setPendingDeletion] = useState<PendingDeletion | null>(null);
   const [deletingCardIds, setDeletingCardIds] = useState<Set<string>>(new Set());
   const pendingDeletionRef = useRef<PendingDeletion | null>(null);
+
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editingName, setEditingName] = useState('');
+  const [isSavingName, setIsSavingName] = useState(false);
+
+  const handleStartEditName = () => {
+    setEditingName(room.name);
+    setIsEditingName(true);
+  };
+
+  const handleSaveName = async () => {
+    const trimmed = editingName.trim();
+    if (!trimmed || !id) return;
+    if (trimmed === room.name) {
+      setIsEditingName(false);
+      return;
+    }
+
+    setIsSavingName(true);
+    const previousName = room.name;
+    setRoom(prev => ({ ...prev, name: trimmed }));
+    setIsEditingName(false);
+
+    try {
+      await updateRoomNameApi(id, trimmed);
+    } catch (err) {
+      console.error('Failed to update room name:', err);
+      setRoom(prev => ({ ...prev, name: previousName }));
+    } finally {
+      setIsSavingName(false);
+    }
+  };
+
 
   useEffect(() => {
     return () => {
@@ -625,7 +659,59 @@ export default function RetroPage() {
             <ArrowLeft size={18} />
           </Link>
           <div className="retro-room-info">
-            <h1 className="retro-room-name">{room.name}</h1>
+            {isEditingName ? (
+              <div className="retro-room-name-edit-form">
+                <input
+                  type="text"
+                  className="retro-room-name-input"
+                  value={editingName}
+                  onChange={(e) => setEditingName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSaveName();
+                    if (e.key === 'Escape') setIsEditingName(false);
+                  }}
+                  disabled={isSavingName}
+                  autoFocus
+                  maxLength={100}
+                  placeholder="Название..."
+                />
+                <button
+                  type="button"
+                  className="btn-icon btn-save-name"
+                  onClick={handleSaveName}
+                  disabled={isSavingName || !editingName.trim()}
+                  data-tooltip="Сохранить"
+                >
+                  {isSavingName ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />}
+                </button>
+                <button
+                  type="button"
+                  className="btn-icon btn-cancel-name"
+                  onClick={() => setIsEditingName(false)}
+                  disabled={isSavingName}
+                  data-tooltip="Отмена"
+                >
+                  <X size={15} />
+                </button>
+              </div>
+            ) : (
+              <div className="retro-room-name-wrapper">
+                <h1 className="retro-room-name">{room.name}</h1>
+                {isFacilitator && (
+                  <button
+                    type="button"
+                    className="btn-icon btn-edit-room-name tooltip-bottom"
+                    onClick={handleStartEditName}
+                    data-tooltip="Редактировать название"
+                    aria-label="Редактировать название"
+                    id="btn-edit-room-name"
+                  >
+                    <Pencil size={15} />
+                  </button>
+                )}
+              </div>
+            )}
+
             <div className="retro-room-meta">
               <span className="badge badge-purple">
                 <Users size={11} />

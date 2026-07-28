@@ -44,11 +44,89 @@
   gap: 4px;
 }
 
+.retro-room-name-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .retro-room-name {
   font-size: 16px;
   font-weight: 700;
-  line-height: 1;
+  line-height: 1.2;
+  margin: 0;
 }
+
+.btn-edit-room-name {
+  background: transparent;
+  border: none;
+  color: var(--text-tertiary, #94a3b8);
+  cursor: pointer;
+  padding: 3px 5px;
+  border-radius: var(--radius-sm, 4px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.btn-edit-room-name:hover {
+  color: var(--text-primary, #ffffff);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.retro-room-name-edit-form {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.retro-room-name-input {
+  font-size: 14px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm, 6px);
+  border: 1px solid var(--border-medium, rgba(255, 255, 255, 0.2));
+  background: var(--bg-surface, rgba(0, 0, 0, 0.25));
+  color: var(--text-primary, #ffffff);
+  outline: none;
+  min-width: 180px;
+  max-width: 260px;
+  transition: border-color 0.15s ease;
+}
+
+.retro-room-name-input:focus {
+  border-color: var(--accent-primary, #7c3aed);
+}
+
+.btn-save-name,
+.btn-cancel-name {
+  padding: 4px;
+  border-radius: var(--radius-sm, 4px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+}
+
+.btn-save-name {
+  color: var(--color-success, #22c55e);
+}
+
+.btn-save-name:hover {
+  background: rgba(34, 197, 94, 0.15);
+}
+
+.btn-cancel-name {
+  color: var(--text-muted, #94a3b8);
+}
+
+.btn-cancel-name:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
 
 .retro-room-meta {
   display: flex;

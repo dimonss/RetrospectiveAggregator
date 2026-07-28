@@ -18,6 +18,7 @@ import {
     toggleVoteResponseSchema,
     updateCardPositionsSchema,
     updateStageSchema,
+    updateRoomNameSchema,
     errorResponseSchema,
 } from './rooms.schemas.js';
 import {
@@ -30,11 +31,13 @@ import {
     toggleCardVote,
     updateCardPositions,
     updateRoomStage,
+    updateRoomName,
     addActionItemToCard,
     toggleActionItemDone,
     deleteActionItem,
     deleteRoom,
 } from './rooms.service.js';
+
 
 export async function roomsRoutes(app: FastifyInstance) {
     const typedApp = app.withTypeProvider<ZodTypeProvider>();
@@ -165,6 +168,41 @@ export async function roomsRoutes(app: FastifyInstance) {
             }
         },
     );
+
+    // PATCH /rooms/:id/name - Update room name
+    typedApp.patch(
+        '/rooms/:id/name',
+        {
+            preHandler: [authenticate],
+            schema: {
+                tags: ['Rooms'],
+                description: 'Update retrospective room name (facilitator only)',
+                security: [{ bearerAuth: [] }],
+                body: updateRoomNameSchema,
+                response: {
+                    200: roomResponseSchema,
+                    401: errorResponseSchema,
+                    403: errorResponseSchema,
+                    404: errorResponseSchema,
+                },
+            },
+        },
+        async (request, reply) => {
+            const user = request.currentUser!;
+            const { id } = request.params as { id: string };
+            try {
+                const room = await updateRoomName(id, user, request.body.name);
+                return reply.send(room);
+            } catch (err: unknown) {
+                const message = err instanceof Error ? err.message : 'Error updating room name';
+                if (message === 'Room not found') {
+                    return reply.status(404).send({ message });
+                }
+                return reply.status(403).send({ message });
+            }
+        },
+    );
+
 
     // DELETE /rooms/:id - Delete room
     typedApp.delete(
