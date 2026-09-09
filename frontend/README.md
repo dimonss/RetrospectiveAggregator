@@ -1,32 +1,105 @@
-# React + TypeScript + Vite
+# Retrospective Aggregator — Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Клиентская часть веб-платформы для проведения командных ретроспектив. Построена на стеке React 19, TypeScript и Vite с реализацией гибкой Glassmorphism дизайн-системы и поддержкой перетаскивания карточек через Drag-and-Drop.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🛠️ Технологический стек
 
-## React Compiler
+- **React 19** (функциональные компоненты, хуки, контексты)
+- **TypeScript** (~6.0, strict mode)
+- **Vite 8** — сборщик с Fast HMR и конфигурацией проксирования API
+- **React Router v7** — клиентская маршрутизация
+- **@dnd-kit** (`core`, `sortable`, `utilities`) — доступный и плавный Drag-and-Drop для группировки карточек
+- **lucide-react** — векторная система иконок
+- **Oxlint** — высокоскоростной линтер
+- **Vanilla CSS** — CSS Custom Properties, темная и светлая темы, Glassmorphism эффекты
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the Oxlint configuration
+## 📁 Архитектура и структура каталогов
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```text
+frontend/src/
+├── api/              # Клиент запросов к Fastify API (аутентификация, комнаты, карточки, задачи)
+├── assets/           # Статические медиа-файлы и иллюстрации
+├── components/       # UI-компоненты:
+│   ├── AddCardForm   # Форма создания карточки (с тумблером анонимности)
+│   ├── ErrorBoundary # Предохранитель ошибок React
+│   ├── OfflineBanner # Индикатор отсутствия интернет-соединения
+│   ├── ProtectedRoute# Защищенный маршрут с проверкой авторизации
+│   ├── RetroCard     # Карточка ретроспективы (голоса, удаление, задачи)
+│   ├── RetroColumn   # Колонка шаблона с DND-контейнером
+│   ├── StageIndicator# Индикатор и переключатель этапов встречи
+│   ├── TemplateModal # Модальное окно выбора шаблона при создании
+│   ├── ThemeToggle   # Переключатель темы (Dark / Light)
+│   ├── ToastContainer# Контейнер всплывающих уведомлений
+│   └── UndoSnackbar  # Снекбар для отмены удаления
+├── context/          # Глобальные контексты:
+│   ├── AuthContext   # Данные пользователя, токены, методы login/logout
+│   ├── OfflineContext# Отслеживание сетевого статуса браузера
+│   ├── ThemeContext  # Переключение темной/светлой тем
+│   └── ToastContext  # Управление системными уведомлениями
+├── hooks/            # Хуки авторизации:
+│   ├── useGoogleAuth # Интеграция с Google Identity Services
+│   └── useTelegramAuth # Интеграция с виджетом авторизации Telegram
+├── pages/            # Экраны приложения:
+│   ├── LoginPage     # Страница входа через Google / Telegram
+│   ├── DashboardPage # Список ретроспектив, персональная статистика, создание комнат
+│   ├── RetroPage     # Интерактивная доска ретроспективы (основной экран)
+│   └── SummaryPage   # Итоги ретроспективы, Action Items, комментарии, экспорт
+├── routes/           # Определение маршрутов (AppRoutes)
+├── App.tsx           # Корневой компонент с подключением контекстов
+├── index.css         # Дизайн-система, цветовые токены и глобальные стили
+└── main.tsx          # Точка монтирования React
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+---
+
+## 🚀 Установка и запуск
+
+1. **Перейдите в директорию `frontend`**:
+   ```bash
+   cd frontend
+   ```
+
+2. **Активируйте требуемую версию Node.js**:
+   ```bash
+   nvm use
+   ```
+
+3. **Установите зависимости**:
+   ```bash
+   npm install
+   ```
+
+4. **Настройте переменные окружения** (создайте `.env` при необходимости):
+   ```env
+   VITE_GOOGLE_CLIENT_ID=ваш_google_client_id.apps.googleusercontent.com
+   VITE_TELEGRAM_BOT=ChalyshAuthBot
+   ```
+
+5. **Запустите локальный сервер разработки**:
+   ```bash
+   npm run dev
+   ```
+   Приложение запустится на `http://localhost:8090/dev/` с автоматическим проксированием запросов к бэкенду на `http://localhost:3001`.
+
+---
+
+## 📜 Доступные скрипты
+
+- `npm run dev` — запуск Vite сервера разработки (`http://localhost:8090/dev/`).
+- `npm run build` — проверка типов через `tsc -b` и сборка production-билда в папку `dist` (с базовым путем `/retrospective/`).
+- `npm run preview` — локальный запуск собранного production-билда.
+- `npm run lint` — запуск быстрого линтера Oxlint.
+- `npm run tunnel` — запуск SSH-туннеля для тестирования внешних OAuth коллбеков.
+
+---
+
+## 🎨 Стайлгайд и оформление
+
+- **CSS Переменные**: Все цвета, отступы и радиусы скругления объявлены в `index.css`. Не используйте жестко закодированные hex-цвета.
+- **Glassmorphism**: Используйте классы `.glass` и `.glass-elevated` для создания эффекта матового стекла.
+- **Темы**: Поддерживается переключение темной (дефолт) и светлой темы (`html[data-theme="light"]`).
+- **Тултипы**: Используйте атрибут `data-tooltip="..."`. В шапках и верхней панели добавляйте класс `tooltip-bottom`.
