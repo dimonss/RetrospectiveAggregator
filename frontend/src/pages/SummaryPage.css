@@ -165,9 +165,10 @@
   font-size: 12px;
   color: var(--text-muted);
   margin-top: 3px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.4;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .action-card-assignee {
