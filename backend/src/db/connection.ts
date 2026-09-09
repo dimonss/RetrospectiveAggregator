@@ -78,6 +78,17 @@ export function initDb(dbPath: string) {
                 created_at TEXT,
                 updated_at TEXT
             );
+
+            CREATE TABLE IF NOT EXISTS retro_action_item_comments (
+                id TEXT PRIMARY KEY NOT NULL,
+                action_item_id TEXT NOT NULL REFERENCES retro_action_items(id) ON DELETE CASCADE,
+                user_id TEXT NOT NULL REFERENCES user_profiles(id) ON DELETE CASCADE,
+                text TEXT NOT NULL,
+                created_at TEXT,
+                updated_at TEXT
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_action_item_comments_action_item_id ON retro_action_item_comments (action_item_id);
         `);
     } catch {
         // Tables already exist

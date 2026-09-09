@@ -20,12 +20,23 @@ export interface RoomApiData {
     updatedAt: string;
 }
 
+export interface ActionItemCommentApiData {
+    id: string;
+    actionItemId: string;
+    userId: string;
+    userName?: string;
+    userAvatar?: string;
+    text: string;
+    createdAt: string;
+}
+
 export interface ActionItemApiData {
     id: string;
     cardId: string;
     text: string;
     assigneeId?: string | null;
     done: boolean;
+    comments?: ActionItemCommentApiData[];
     createdAt: string;
 }
 
@@ -142,6 +153,24 @@ export async function deleteActionItemApi(
     actionItemId: string
 ): Promise<{ success: boolean }> {
     return apiRequest<{ success: boolean }>(`/rooms/action-items/${actionItemId}`, {
+        method: 'DELETE',
+    });
+}
+
+export async function addActionItemCommentApi(
+    actionItemId: string,
+    text: string
+): Promise<ActionItemCommentApiData> {
+    return apiRequest<ActionItemCommentApiData>(`/rooms/action-items/${actionItemId}/comments`, {
+        method: 'POST',
+        body: JSON.stringify({ text }),
+    });
+}
+
+export async function deleteActionItemCommentApi(
+    commentId: string
+): Promise<{ success: boolean }> {
+    return apiRequest<{ success: boolean }>(`/rooms/action-items/comments/${commentId}`, {
         method: 'DELETE',
     });
 }

@@ -1,8 +1,8 @@
-import { eq, count, and } from 'drizzle-orm';
+import { eq, count, and, inArray } from 'drizzle-orm';
 import { getDb } from '../../db/connection.js';
 import { getEnv } from '../../config/env.js';
-import { retroRooms, retroParticipants, retroCards, retroVotes, retroActionItems, userProfiles } from '../../db/schema.js';
-import type { CreateRoomInput, RoomResponse, RoomDetailResponse, CardResponse, CreateCardInput, RoomStatsResponse, UpdateCardPositionsInput } from './rooms.schemas.js';
+import { retroRooms, retroParticipants, retroCards, retroVotes, retroActionItems, retroActionItemComments, userProfiles } from '../../db/schema.js';
+import type { CreateRoomInput, RoomResponse, RoomDetailResponse, CardResponse, CreateCardInput, RoomStatsResponse, UpdateCardPositionsInput, ActionItemCommentResponse } from './rooms.schemas.js';
 
 function buildInviteLink(roomId: string): string {
     const appUrl = getEnv().APP_URL.endsWith('/')
@@ -172,6 +172,17 @@ export async function getRoomById(
         .where(eq(retroActionItems.roomId, roomId))
         .all();
 
+    const allUserProfiles = db.select().from(userProfiles).all();
+
+    const actionItemIds = dbActionItems.map(ai => ai.id);
+    const allComments = actionItemIds.length > 0
+        ? db
+            .select()
+            .from(retroActionItemComments)
+            .where(inArray(retroActionItemComments.actionItemId, actionItemIds))
+            .all()
+        : [];
+
     const cards: CardResponse[] = [];
     for (const card of dbCards) {
         const votes = db
@@ -183,14 +194,33 @@ export async function getRoomById(
 
         const cardActionItems = dbActionItems
             .filter(ai => ai.cardId === card.id)
-            .map(ai => ({
-                id: ai.id,
-                cardId: ai.cardId,
-                text: ai.text,
-                assigneeId: ai.assigneeId,
-                done: ai.done === 'true',
-                createdAt: ai.createdAt || new Date().toISOString(),
-            }));
+            .map(ai => {
+                const itemComments = allComments
+                    .filter(c => c.actionItemId === ai.id)
+                    .sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''))
+                    .map(c => {
+                        const author = allUserProfiles.find(u => u.id === c.userId);
+                        return {
+                            id: c.id,
+                            actionItemId: c.actionItemId,
+                            userId: c.userId,
+                            userName: author ? [author.firstName, author.lastName].filter(Boolean).join(' ') || author.username || 'Участник' : 'Участник',
+                            userAvatar: author?.photoUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${author?.username || c.userId}`,
+                            text: c.text,
+                            createdAt: c.createdAt || new Date().toISOString(),
+                        };
+                    });
+
+                return {
+                    id: ai.id,
+                    cardId: ai.cardId,
+                    text: ai.text,
+                    assigneeId: ai.assigneeId,
+                    done: ai.done === 'true',
+                    comments: itemComments,
+                    createdAt: ai.createdAt || new Date().toISOString(),
+                };
+            });
 
         cards.push({
             id: card.id,
@@ -207,7 +237,6 @@ export async function getRoomById(
     }
 
     const participantUserIds = participants.map(p => p.userId);
-    const allUserProfiles = db.select().from(userProfiles).all();
     const participantProfiles = allUserProfiles
         .filter(u => participantUserIds.includes(u.id))
         .map(u => ({
@@ -512,6 +541,7 @@ export async function addActionItemToCard(
         text: createdActionItem.text,
         assigneeId: createdActionItem.assigneeId,
         done: createdActionItem.done === 'true',
+        comments: [],
         createdAt: createdActionItem.createdAt || new Date().toISOString(),
     };
 }
@@ -573,6 +603,126 @@ export async function deleteActionItem(
     }
 
     db.delete(retroActionItems).where(eq(retroActionItems.id, actionItemId)).run();
+    return true;
+}
+
+export async function addActionItemComment(
+    actionItemId: string,
+    userProfile: typeof userProfiles.$inferSelect,
+    input: { text: string },
+): Promise<ActionItemCommentResponse> {
+    const db = getDb();
+
+    const item = db
+        .select()
+        .from(retroActionItems)
+        .where(eq(retroActionItems.id, actionItemId))
+        .get();
+
+    if (!item) {
+        throw new Error('Action item not found');
+    }
+
+    const room = db
+        .select()
+        .from(retroRooms)
+        .where(eq(retroRooms.id, item.roomId))
+        .get();
+
+    if (!room || room.deleted === 'true') {
+        throw new Error('Room not found');
+    }
+
+    // Check membership: user must be facilitator or participant in the room
+    const isFacilitator = room.facilitatorId === userProfile.id;
+    if (!isFacilitator) {
+        const participant = db
+            .select()
+            .from(retroParticipants)
+            .where(
+                and(
+                    eq(retroParticipants.roomId, room.id),
+                    eq(retroParticipants.userId, userProfile.id),
+                ),
+            )
+            .get();
+
+        if (!participant) {
+            db.insert(retroParticipants)
+                .values({
+                    roomId: room.id,
+                    userId: userProfile.id,
+                    role: 'participant',
+                })
+                .run();
+        }
+    }
+
+    const trimmedText = input.text.trim();
+    if (!trimmedText) {
+        throw new Error('Comment text cannot be empty');
+    }
+
+    const createdComment = db
+        .insert(retroActionItemComments)
+        .values({
+            actionItemId: item.id,
+            userId: userProfile.id,
+            text: trimmedText,
+        })
+        .returning()
+        .get();
+
+    const userName = [userProfile.firstName, userProfile.lastName].filter(Boolean).join(' ') || userProfile.username || 'Участник';
+    const userAvatar = userProfile.photoUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userProfile.username || userProfile.id}`;
+
+    return {
+        id: createdComment.id,
+        actionItemId: createdComment.actionItemId,
+        userId: createdComment.userId,
+        userName,
+        userAvatar,
+        text: createdComment.text,
+        createdAt: createdComment.createdAt || new Date().toISOString(),
+    };
+}
+
+export async function deleteActionItemComment(
+    commentId: string,
+    userProfile: typeof userProfiles.$inferSelect,
+): Promise<boolean> {
+    const db = getDb();
+
+    const comment = db
+        .select()
+        .from(retroActionItemComments)
+        .where(eq(retroActionItemComments.id, commentId))
+        .get();
+
+    if (!comment) return false;
+
+    if (comment.userId !== userProfile.id) {
+        const item = db
+            .select()
+            .from(retroActionItems)
+            .where(eq(retroActionItems.id, comment.actionItemId))
+            .get();
+
+        if (item) {
+            const room = db
+                .select()
+                .from(retroRooms)
+                .where(eq(retroRooms.id, item.roomId))
+                .get();
+            if (!room || room.facilitatorId !== userProfile.id) {
+                throw new Error('Forbidden: You can only delete your own comments or you must be the facilitator');
+            }
+        } else {
+            throw new Error('Action item not found');
+        }
+    }
+
+    db.delete(retroActionItemComments).where(eq(retroActionItemComments.id, commentId)).run();
     return true;
 }
 

@@ -62,6 +62,25 @@ if (existsSync('./drizzle/meta/_journal.json')) {
         }
     }
 
+    // 3. Check if retro_action_item_comments table exists
+    const commentTables = sqlite.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='retro_action_item_comments'").all();
+    if (commentTables.length > 0) {
+        sqlite.exec("CREATE INDEX IF NOT EXISTS idx_action_item_comments_action_item_id ON retro_action_item_comments (action_item_id);");
+        const entry5 = journal.entries[5];
+        if (entry5) {
+            const sqlContent = readFileSync(`./drizzle/${entry5.tag}.sql`, 'utf-8');
+            const h = createHash('sha256').update(sqlContent).digest('hex');
+            const existing = sqlite.prepare('SELECT 1 FROM "__drizzle_migrations" WHERE created_at = ?').get(entry5.when);
+            if (!existing) {
+                sqlite.prepare('INSERT INTO "__drizzle_migrations" ("hash", "created_at") VALUES (?, ?)').run(h, entry5.when);
+                console.log('Marked migration 0005 (action item comments) as already applied.');
+            } else {
+                sqlite.prepare('UPDATE "__drizzle_migrations" SET "hash" = ? WHERE created_at = ?').run(h, entry5.when);
+            }
+        }
+    }
+
+
     // Mark previous migrations (0000, 0001, 0002) as applied if newer ones are present
     const maxRecord = sqlite.prepare('SELECT MAX(created_at) as max_when FROM "__drizzle_migrations"').get() as { max_when: number | null };
     if (maxRecord && maxRecord.max_when) {

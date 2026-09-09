@@ -36,6 +36,13 @@
       "when": 1785600000000,
       "tag": "0004_add_deleted_and_action_items",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1786000000000,
+      "tag": "0005_add_action_item_comments",
+      "breakpoints": true
     }
   ]
 }

@@ -27,12 +27,27 @@ export const roomResponseSchema = z.object({
 export const roomListResponseSchema = z.array(roomResponseSchema);
 
 
+export const actionItemCommentSchema = z.object({
+    id: z.string(),
+    actionItemId: z.string(),
+    userId: z.string(),
+    userName: z.string().optional(),
+    userAvatar: z.string().optional(),
+    text: z.string(),
+    createdAt: z.string(),
+});
+
+export const createActionItemCommentSchema = z.object({
+    text: z.string().trim().min(1, 'Comment cannot be empty').max(1000, 'Comment is too long'),
+});
+
 export const actionItemSchema = z.object({
     id: z.string(),
     cardId: z.string(),
     text: z.string(),
     assigneeId: z.string().optional().nullable(),
     done: z.boolean(),
+    comments: z.array(actionItemCommentSchema).default([]),
     createdAt: z.string(),
 });
 
@@ -126,6 +141,9 @@ export type RoomResponse = z.infer<typeof roomResponseSchema>;
 export type RoomDetailResponse = z.infer<typeof roomDetailResponseSchema>;
 export type CreateCardInput = z.infer<typeof createCardSchema>;
 export type CardResponse = z.infer<typeof cardSchema>;
+export type ActionItemResponse = z.infer<typeof actionItemSchema>;
+export type ActionItemCommentResponse = z.infer<typeof actionItemCommentSchema>;
+export type CreateActionItemCommentInput = z.infer<typeof createActionItemCommentSchema>;
 export type UpdateCardPositionsInput = z.infer<typeof updateCardPositionsSchema>;
 export type UpdateStageInput = z.infer<typeof updateStageSchema>;
 

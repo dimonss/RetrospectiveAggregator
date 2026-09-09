@@ -23,11 +23,22 @@ export interface RetroCard {
   actionItems?: ActionItem[];
 }
 
+export interface ActionItemComment {
+  id: string;
+  actionItemId: string;
+  userId: string;
+  userName?: string;
+  userAvatar?: string;
+  text: string;
+  createdAt: string;
+}
+
 export interface ActionItem {
   id: string;
   text: string;
   assigneeId: string;
   done: boolean;
+  comments?: ActionItemComment[];
 }
 
 export interface RetroColumn {

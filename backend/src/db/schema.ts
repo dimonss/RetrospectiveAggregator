@@ -66,5 +66,15 @@ export const retroActionItems = sqliteTable('retro_action_items', {
     updatedAt: text('updated_at').$defaultFn(() => new Date().toISOString()),
 });
 
+export const retroActionItemComments = sqliteTable('retro_action_item_comments', {
+    id: text('id').primaryKey().$defaultFn(() => randomUUID()),
+    actionItemId: text('action_item_id').notNull().references(() => retroActionItems.id, { onDelete: 'cascade' }),
+    userId: text('user_id').notNull().references(() => userProfiles.id, { onDelete: 'cascade' }),
+    text: text('text').notNull(),
+    createdAt: text('created_at').$defaultFn(() => new Date().toISOString()),
+    updatedAt: text('updated_at').$defaultFn(() => new Date().toISOString()),
+});
+
+
 
 

@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Check, Copy, ArrowLeft, CheckSquare, Loader2, Home, Trash2 } from 'lucide-react';
+import { Check, Copy, ArrowLeft, CheckSquare, Loader2, Home, Trash2, MessageSquare, Send } from 'lucide-react';
 import { MOCK_ROOM, MOCK_USERS, type ActionItem, type RetroRoom } from '../mocks/data';
-import { getRoomApi, toggleActionItemDoneApi, deleteActionItemApi } from '../api/rooms';
+import { getRoomApi, toggleActionItemDoneApi, deleteActionItemApi, addActionItemCommentApi, deleteActionItemCommentApi } from '../api/rooms';
 import { useAuth } from '../context/AuthContext';
+import { showGlobalToast } from '../context/ToastContext';
 import ThemeToggle from '../components/ThemeToggle';
 import UndoSnackbar from '../components/UndoSnackbar';
 import './SummaryPage.css';
@@ -13,7 +14,12 @@ function buildSummaryData(room: RetroRoom) {
 
   room.cards.forEach(card => {
     (card.actionItems || []).forEach(ai => {
-      allActionItems.push({ ...ai, cardText: card.text, cardId: card.id });
+      allActionItems.push({
+        ...ai,
+        comments: ai.comments || [],
+        cardText: card.text,
+        cardId: card.id,
+      });
     });
   });
 
@@ -23,7 +29,8 @@ function buildSummaryData(room: RetroRoom) {
 function generateMarkdown(
   room: RetroRoom,
   items: ReturnType<typeof buildSummaryData>,
-  participantsList?: Array<{ id: string; name: string; avatar: string }>
+  participantsList?: Array<{ id: string; name: string; avatar: string }>,
+  checkedItems?: Set<string>
 ) {
   const date = new Date(room.createdAt || Date.now()).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
   const pList = (participantsList && participantsList.length > 0) ? participantsList : (room.participants || MOCK_USERS);
@@ -33,9 +40,16 @@ function generateMarkdown(
     '',
     '## 📋 Задачи',
     '',
-    ...items.map(ai => {
+    ...items.flatMap(ai => {
       const assignee = pList.find(u => u.id === ai.assigneeId) || MOCK_USERS.find(u => u.id === ai.assigneeId);
-      return `- [ ] ${ai.text} *(${assignee?.name || 'Не назначен'})*`;
+      const isDone = checkedItems ? checkedItems.has(ai.id) : ai.done;
+      const itemLines = [`- [${isDone ? 'x' : ' '}] ${ai.text} *(${assignee?.name || 'Не назначен'})*`];
+      if (ai.comments && ai.comments.length > 0) {
+        ai.comments.forEach(c => {
+          itemLines.push(`  - 💬 ${c.userName || 'Участник'}: ${c.text}`);
+        });
+      }
+      return itemLines;
     }),
     '',
     '---',
@@ -86,6 +100,15 @@ export default function SummaryPage() {
               text: ai.text,
               assigneeId: ai.assigneeId || '',
               done: ai.done,
+              comments: (ai.comments || []).map(comm => ({
+                id: comm.id,
+                actionItemId: comm.actionItemId,
+                userId: comm.userId,
+                userName: comm.userName,
+                userAvatar: comm.userAvatar,
+                text: comm.text,
+                createdAt: comm.createdAt,
+              })),
             })),
           }));
 
@@ -119,6 +142,81 @@ export default function SummaryPage() {
     }
   }, [id]);
 
+  const [expandedComments, setExpandedComments] = useState<Set<string>>(new Set());
+  const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>({});
+  const [submittingComment, setSubmittingComment] = useState<Record<string, boolean>>({});
+  const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
+
+  const toggleComments = (actionItemId: string) => {
+    setExpandedComments(prev => {
+      const next = new Set(prev);
+      if (next.has(actionItemId)) {
+        next.delete(actionItemId);
+      } else {
+        next.add(actionItemId);
+      }
+      return next;
+    });
+  };
+
+  const handleAddComment = async (actionItemId: string) => {
+    const text = (commentDrafts[actionItemId] || '').trim();
+    if (!text || submittingComment[actionItemId]) return;
+
+    setSubmittingComment(prev => ({ ...prev, [actionItemId]: true }));
+    try {
+      const newComment = await addActionItemCommentApi(actionItemId, text);
+      setRoom(prev => ({
+        ...prev,
+        cards: prev.cards.map(card => ({
+          ...card,
+          actionItems: (card.actionItems || []).map(ai => {
+            if (ai.id !== actionItemId) return ai;
+            return {
+              ...ai,
+              comments: [...(ai.comments || []), newComment],
+            };
+          }),
+        })),
+      }));
+      setCommentDrafts(prev => ({ ...prev, [actionItemId]: '' }));
+      setExpandedComments(prev => new Set(prev).add(actionItemId));
+    } catch (err) {
+      console.error('Failed to add comment:', err);
+      showGlobalToast({ message: 'Не удалось добавить комментарий', type: 'error' });
+    } finally {
+      setSubmittingComment(prev => ({ ...prev, [actionItemId]: false }));
+    }
+  };
+
+  const handleDeleteComment = async (actionItemId: string, commentId: string) => {
+    if (!window.confirm('Удалить этот комментарий?')) {
+      return;
+    }
+    setDeletingCommentId(commentId);
+    try {
+      await deleteActionItemCommentApi(commentId);
+      setRoom(prev => ({
+        ...prev,
+        cards: prev.cards.map(card => ({
+          ...card,
+          actionItems: (card.actionItems || []).map(ai => {
+            if (ai.id !== actionItemId) return ai;
+            return {
+              ...ai,
+              comments: (ai.comments || []).filter(c => c.id !== commentId),
+            };
+          }),
+        })),
+      }));
+    } catch (err) {
+      console.error('Failed to delete comment:', err);
+      showGlobalToast({ message: 'Не удалось удалить комментарий', type: 'error' });
+    } finally {
+      setDeletingCommentId(null);
+    }
+  };
+
   const isFacilitator = user?.id === room.facilitatorId;
   const participantsList = (room.participants && room.participants.length > 0)
     ? room.participants
@@ -131,7 +229,7 @@ export default function SummaryPage() {
     .slice(0, 5);
 
   const handleCopy = () => {
-    const md = generateMarkdown(room, actionItems, participantsList);
+    const md = generateMarkdown(room, actionItems, participantsList, checkedItems);
     navigator.clipboard.writeText(md).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -215,7 +313,11 @@ export default function SummaryPage() {
   const toggleCheck = async (actionItemId: string) => {
     setCheckedItems(prev => {
       const next = new Set(prev);
-      next.has(actionItemId) ? next.delete(actionItemId) : next.add(actionItemId);
+      if (next.has(actionItemId)) {
+        next.delete(actionItemId);
+      } else {
+        next.add(actionItemId);
+      }
       return next;
     });
 
@@ -225,7 +327,11 @@ export default function SummaryPage() {
       console.error('Failed to toggle action item state:', err);
       setCheckedItems(prev => {
         const next = new Set(prev);
-        next.has(actionItemId) ? next.delete(actionItemId) : next.add(actionItemId);
+        if (next.has(actionItemId)) {
+          next.delete(actionItemId);
+        } else {
+          next.add(actionItemId);
+        }
         return next;
       });
     }
@@ -287,54 +393,168 @@ export default function SummaryPage() {
                   || MOCK_USERS.find(u => u.id === item.assigneeId);
                 const avatarUrl = assignee?.avatar || (item.assigneeId ? `https://api.dicebear.com/7.x/avataaars/svg?seed=${item.assigneeId}` : undefined);
                 const isDone = checkedItems.has(item.id);
+                const commentsCount = item.comments?.length || 0;
+                const isCommentsOpen = expandedComments.has(item.id);
                 return (
                   <div
                     key={item.id}
                     className={`action-card glass ${isDone ? 'action-card--done' : ''}`}
-                    onClick={() => toggleCheck(item.id)}
-                    role="checkbox"
-                    aria-checked={isDone}
-                    tabIndex={0}
                     id={`action-card-${item.id}`}
-                    onKeyDown={(e) => e.key === 'Enter' && toggleCheck(item.id)}
                   >
-                    <div className="action-card-check">
-                      {isDone ? (
-                        <div className="check-done">✓</div>
-                      ) : (
-                        <div className="check-empty" />
-                      )}
-                    </div>
-                    <div className="action-card-content">
-                      <p className="action-card-text">{item.text}</p>
-                      <p className="action-card-source">↩ {item.cardText}</p>
-                    </div>
-                    <div className="action-card-right" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <div className="action-card-assignee">
-                        {avatarUrl && (
-                          <img
-                            src={avatarUrl}
-                            alt={assignee?.name || 'Ответственный'}
-                            className="assignee-avatar"
-                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                          />
+                    <div className="action-card-main">
+                      <div
+                        className="action-card-check"
+                        role="checkbox"
+                        aria-checked={isDone}
+                        aria-label={`Отметить задачу «${item.text}» как ${isDone ? 'невыполненную' : 'выполненную'}`}
+                        tabIndex={0}
+                        onClick={() => toggleCheck(item.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === ' ' || e.key === 'Enter') {
+                            e.preventDefault();
+                            toggleCheck(item.id);
+                          }
+                        }}
+                      >
+                        {isDone ? (
+                          <div className="check-done">✓</div>
+                        ) : (
+                          <div className="check-empty" />
                         )}
-                        <span className="assignee-name">{assignee?.name?.split(' ')[0] || 'Не назначен'}</span>
                       </div>
-                      {isFacilitator && (
+                      <div
+                        className="action-card-content"
+                        onClick={() => toggleCheck(item.id)}
+                      >
+                        <p className="action-card-text">{item.text}</p>
+                        <p className="action-card-source">↩ {item.cardText}</p>
+                      </div>
+                      <div className="action-card-right" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div className="action-card-assignee">
+                          {avatarUrl && (
+                            <img
+                              src={avatarUrl}
+                              alt={assignee?.name || 'Ответственный'}
+                              className="assignee-avatar"
+                              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                            />
+                          )}
+                          <span className="assignee-name">{assignee?.name?.split(' ')[0] || 'Не назначен'}</span>
+                        </div>
                         <button
                           type="button"
-                          className="action-card-delete-btn"
+                          className={`action-card-comment-btn ${commentsCount > 0 ? 'has-comments' : ''} ${isCommentsOpen ? 'active' : ''}`}
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleDeleteActionItem(item.id);
+                            toggleComments(item.id);
                           }}
-                          title="Удалить задачу"
+                          title={commentsCount > 0 ? `Комментарии (${commentsCount})` : 'Добавить комментарий'}
+                          id={`btn-comments-${item.id}`}
                         >
-                          <Trash2 size={14} />
+                          <MessageSquare size={14} />
+                          {commentsCount > 0 && <span className="comment-badge">{commentsCount}</span>}
                         </button>
-                      )}
+                        {isFacilitator && (
+                          <button
+                            type="button"
+                            className="action-card-delete-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteActionItem(item.id);
+                            }}
+                            title="Удалить задачу"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
+                      </div>
                     </div>
+
+                    {isCommentsOpen && (
+                      <div
+                        className="action-comments-section"
+                        onClick={(e) => e.stopPropagation()}
+                        id={`comments-section-${item.id}`}
+                      >
+                        <div className="action-comments-header">
+                          <span className="action-comments-title">
+                            <MessageSquare size={13} />
+                            <span>Комментарии</span>
+                            {commentsCount > 0 && <span className="badge badge-purple">{commentsCount}</span>}
+                          </span>
+                        </div>
+
+                        {commentsCount > 0 && (
+                          <div className="action-comments-list">
+                            {item.comments!.map((comment) => {
+                              const isCommentAuthor = user?.id === comment.userId;
+                              const canDeleteComment = isCommentAuthor || isFacilitator;
+                              const isDeleting = deletingCommentId === comment.id;
+                              const commentDate = new Date(comment.createdAt).toLocaleString('ru-RU', {
+                                day: 'numeric',
+                                month: 'short',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              });
+
+                              return (
+                                <div key={comment.id} className="action-comment-item" id={`comment-${comment.id}`}>
+                                  <img
+                                    src={comment.userAvatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${comment.userId}`}
+                                    alt={comment.userName || 'Автор'}
+                                    className="action-comment-avatar"
+                                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                  />
+                                  <div className="action-comment-body">
+                                    <div className="action-comment-meta">
+                                      <span className="action-comment-author">{comment.userName || 'Участник'}</span>
+                                      <span className="action-comment-time">{commentDate}</span>
+                                      {canDeleteComment && (
+                                        <button
+                                          type="button"
+                                          className="action-comment-delete-btn"
+                                          onClick={() => handleDeleteComment(item.id, comment.id)}
+                                          disabled={isDeleting}
+                                          title="Удалить комментарий"
+                                        >
+                                          {isDeleting ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+                                        </button>
+                                      )}
+                                    </div>
+                                    <p className="action-comment-text">{comment.text}</p>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        <form
+                          className="action-comment-form"
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            handleAddComment(item.id);
+                          }}
+                        >
+                          <input
+                            type="text"
+                            className="action-comment-input"
+                            placeholder="Написать комментарий..."
+                            value={commentDrafts[item.id] || ''}
+                            onChange={(e) => setCommentDrafts(prev => ({ ...prev, [item.id]: e.target.value }))}
+                            disabled={submittingComment[item.id]}
+                          />
+                          <button
+                            type="submit"
+                            className="btn-primary action-comment-send-btn"
+                            disabled={!commentDrafts[item.id]?.trim() || submittingComment[item.id]}
+                            title="Отправить комментарий"
+                          >
+                            {submittingComment[item.id] ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
+                          </button>
+                        </form>
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -404,7 +624,7 @@ export default function SummaryPage() {
                 <h2>Markdown превью</h2>
               </div>
               <pre className="markdown-preview glass">
-                {generateMarkdown(room, actionItems, participantsList)}
+                {generateMarkdown(room, actionItems, participantsList, checkedItems)}
               </pre>
               <button
                 className="btn-primary"

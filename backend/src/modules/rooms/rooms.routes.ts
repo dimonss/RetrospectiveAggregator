@@ -12,6 +12,8 @@ import {
     cardSchema,
     createActionItemSchema,
     actionItemSchema,
+    actionItemCommentSchema,
+    createActionItemCommentSchema,
     deleteCardParamsSchema,
     deleteCardResponseSchema,
     toggleVoteParamsSchema,
@@ -35,6 +37,8 @@ import {
     addActionItemToCard,
     toggleActionItemDone,
     deleteActionItem,
+    addActionItemComment,
+    deleteActionItemComment,
     deleteRoom,
 } from './rooms.service.js';
 
@@ -453,6 +457,86 @@ export async function roomsRoutes(app: FastifyInstance) {
             } catch (err: unknown) {
                 const message = err instanceof Error ? err.message : 'Error deleting action item';
                 return reply.status(404).send({ message });
+            }
+        },
+    );
+
+    // POST /rooms/action-items/:actionItemId/comments - Add comment to action item
+    typedApp.post(
+        '/rooms/action-items/:actionItemId/comments',
+        {
+            preHandler: [authenticate],
+            schema: {
+                tags: ['ActionItems'],
+                description: 'Add comment to action item',
+                security: [{ bearerAuth: [] }],
+                params: z.object({ actionItemId: z.string() }),
+                body: createActionItemCommentSchema,
+                response: {
+                    201: actionItemCommentSchema,
+                    400: errorResponseSchema,
+                    401: errorResponseSchema,
+                    403: errorResponseSchema,
+                    404: errorResponseSchema,
+                },
+            },
+        },
+        async (request, reply) => {
+            const user = request.currentUser!;
+            const { actionItemId } = request.params as { actionItemId: string };
+            try {
+                const comment = await addActionItemComment(actionItemId, user, request.body);
+                return reply.status(201).send(comment);
+            } catch (err: unknown) {
+                const message = err instanceof Error ? err.message : 'Error adding comment';
+                if (message === 'Action item not found' || message === 'Room not found') {
+                    return reply.status(404).send({ message });
+                }
+                if (message.startsWith('Forbidden')) {
+                    return reply.status(403).send({ message });
+                }
+                return reply.status(400).send({ message });
+            }
+        },
+    );
+
+    // DELETE /rooms/action-items/comments/:commentId - Delete comment from action item
+    typedApp.delete(
+        '/rooms/action-items/comments/:commentId',
+        {
+            preHandler: [authenticate],
+            schema: {
+                tags: ['ActionItems'],
+                description: 'Delete comment from action item',
+                security: [{ bearerAuth: [] }],
+                params: z.object({ commentId: z.string() }),
+                response: {
+                    200: z.object({ success: z.boolean() }),
+                    400: errorResponseSchema,
+                    401: errorResponseSchema,
+                    403: errorResponseSchema,
+                    404: errorResponseSchema,
+                },
+            },
+        },
+        async (request, reply) => {
+            const user = request.currentUser!;
+            const { commentId } = request.params as { commentId: string };
+            try {
+                const deleted = await deleteActionItemComment(commentId, user);
+                if (!deleted) {
+                    return reply.status(404).send({ message: 'Comment not found' });
+                }
+                return reply.send({ success: true });
+            } catch (err: unknown) {
+                const message = err instanceof Error ? err.message : 'Error deleting comment';
+                if (message === 'Action item not found' || message === 'Comment not found') {
+                    return reply.status(404).send({ message });
+                }
+                if (message.startsWith('Forbidden')) {
+                    return reply.status(403).send({ message });
+                }
+                return reply.status(400).send({ message });
             }
         },
     );
