@@ -95,3 +95,60 @@
 *   `photo_url` (TEXT, Nullable) — Ссылка на аватар профиля
 *   `created_at` (TEXT) — Дата создания профиля (ISO)
 *   `updated_at` (TEXT) — Дата последнего обновления (ISO)
+
+### Таблица `retro_rooms`
+Комнаты проведения ретроспектив:
+*   `id` (TEXT, PK) — UUID комнаты
+*   `name` (TEXT) — Название комнаты
+*   `template` (TEXT) — Идентификатор шаблона (`went-well`, `mad-sad-glad`, `start-stop-continue`)
+*   `stage` (TEXT) — Текущая стадия (`brainstorming`, `grouping`, `voting`, `discussion`, `completed`)
+*   `facilitator_id` (TEXT, FK -> `user_profiles.id`) — ID создателя/фасилитатора
+*   `anonymous_mode` (TEXT) — Флаг включения анонимного режима создания карточек (`true` / `false`)
+*   `deleted` (TEXT) — Флаг мягкого удаления комнаты (`true` / `false`)
+*   `created_at`, `updated_at` (TEXT) — Метки времени создания и обновления
+
+### Таблица `retro_participants`
+Участники комнат ретроспектив:
+*   `id` (TEXT, PK) — UUID записи участника
+*   `room_id` (TEXT, FK -> `retro_rooms.id`) — Ссылка на комнату (каскадное удаление)
+*   `user_id` (TEXT, FK -> `user_profiles.id`) — Ссылка на профиль пользователя
+*   `role` (TEXT) — Роль в комнате (`facilitator` / `participant`)
+*   `joined_at` (TEXT) — Время присоединения
+
+### Таблица `retro_cards`
+Карточки с отзывами/заметками:
+*   `id` (TEXT, PK) — UUID карточки
+*   `room_id` (TEXT, FK -> `retro_rooms.id`) — Ссылка на комнату
+*   `column_id` (TEXT) — Идентификатор колонки шаблона
+*   `text` (TEXT) — Содержимое карточки
+*   `author_id` (TEXT, FK -> `user_profiles.id`) — Автор карточки
+*   `clusterId` (TEXT, Nullable) — ID кластера карточек при объединении
+*   `is_anonymous` (TEXT) — Флаг анонимности карточки
+*   `position` (INTEGER) — Порядковый номер сортировки в колонке
+*   `created_at`, `updated_at` (TEXT) — Метки времени
+
+### Таблица `retro_votes`
+Голоса участников за карточки:
+*   `id` (TEXT, PK) — UUID голоса
+*   `card_id` (TEXT, FK -> `retro_cards.id`) — Карточка, за которую отдан голос
+*   `user_id` (TEXT, FK -> `user_profiles.id`) — Пользователь, отдавший голос
+*   `created_at` (TEXT) — Время голосования
+
+### Таблица `retro_action_items`
+Задачи (Action Items), сформированные по результатам обсуждения:
+*   `id` (TEXT, PK) — UUID задачи
+*   `card_id` (TEXT, FK -> `retro_cards.id`) — Карточка, породившая задачу
+*   `room_id` (TEXT, FK -> `retro_rooms.id`) — Комната ретроспективы
+*   `text` (TEXT) — Формулировка задачи
+*   `assignee_id` (TEXT, Nullable, FK -> `user_profiles.id`) — Ответственный исполнитель
+*   `done` (TEXT) — Статус выполнения (`true` / `false`)
+*   `created_at`, `updated_at` (TEXT) — Метки времени
+
+### Таблица `retro_action_item_comments`
+Комментарии и обсуждения по конкретным задачам:
+*   `id` (TEXT, PK) — UUID комментария
+*   `action_item_id` (TEXT, FK -> `retro_action_items.id`) — Задача, к которой оставлен комментарий
+*   `user_id` (TEXT, FK -> `user_profiles.id`) — Автор комментария
+*   `text` (TEXT) — Текст комментария
+*   `created_at`, `updated_at` (TEXT) — Метки времени
+
