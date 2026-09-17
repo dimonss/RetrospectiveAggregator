@@ -28,26 +28,29 @@
   padding: 0 var(--space-xl);
   height: 72px;
   border-bottom: 1px solid var(--border-subtle);
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .retro-header-left {
   display: flex;
   align-items: center;
   gap: var(--space-md);
-  flex-shrink: 0;
+  flex-shrink: 1;
+  min-width: 0;
 }
 
 .retro-room-info {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
 }
 
 .retro-room-name-wrapper {
   display: flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
 }
 
 .retro-room-name {
@@ -55,6 +58,10 @@
   font-weight: 700;
   line-height: 1.2;
   margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 240px;
 }
 
 .btn-edit-room-name {
@@ -132,12 +139,15 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
 }
 
 .retro-header-center {
-  flex: 1;
+  flex: 1 1 auto;
   display: flex;
   justify-content: center;
+  min-width: 0;
 }
 
 .retro-header-right {
@@ -145,7 +155,7 @@
   align-items: center;
   gap: var(--space-sm);
   flex-shrink: 0;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 /* Anonymous toggle */
@@ -179,10 +189,12 @@
   display: flex;
   align-items: center;
   gap: var(--space-sm);
-  padding: 8px 14px;
+  padding: 6px 12px;
   border-radius: var(--radius-md);
   background: rgba(245, 158, 11, 0.1);
   border: 1px solid rgba(245, 158, 11, 0.25);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .votes-counter-dots {
@@ -210,6 +222,14 @@
   font-size: 13px;
   font-weight: 600;
   color: #fbbf24;
+}
+
+.votes-counter-text-full {
+  display: inline;
+}
+
+.votes-counter-text-short {
+  display: none;
 }
 
 /* Stage hint */
@@ -341,6 +361,78 @@
   background: rgba(255, 255, 255, 0.2);
 }
 
+/* ─── Responsive Header Breakpoints ────────────────────────────────────────── */
+
+@media (max-width: 1474px) {
+  .retro-room-name {
+    max-width: 180px;
+  }
+
+  .votes-counter-text-full {
+    display: none;
+  }
+
+  .votes-counter-text-short {
+    display: inline;
+  }
+
+  .votes-counter {
+    padding: 6px 10px;
+    gap: 6px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .retro-header {
+    padding: 0 var(--space-lg);
+    gap: var(--space-sm);
+  }
+
+  .retro-room-name {
+    max-width: 150px;
+    font-size: 15px;
+  }
+
+  #btn-share-link .btn-header-label {
+    display: none;
+  }
+
+  #btn-share-link {
+    padding: 8px 10px;
+  }
+}
+
+@media (max-width: 980px) {
+  .retro-header {
+    padding: 0 var(--space-md);
+    gap: 8px;
+  }
+
+  .retro-room-name {
+    max-width: 120px;
+  }
+
+  .retro-header-left {
+    gap: var(--space-xs);
+  }
+
+  #btn-next-stage .btn-header-label {
+    display: none;
+  }
+
+  #btn-next-stage {
+    padding: 8px 12px;
+  }
+
+  .votes-counter-dots {
+    display: none;
+  }
+
+  .votes-counter {
+    padding: 5px 8px;
+  }
+}
+
 @media (max-width: 768px) {
   .mobile-column-tabs {
     display: flex;
@@ -348,18 +440,20 @@
 
   .retro-header {
     height: auto;
-    padding: 12px var(--space-md);
+    padding: 10px var(--space-md);
     display: grid;
     grid-template-columns: 1fr auto;
-    row-gap: 12px;
+    row-gap: 10px;
     align-items: center;
   }
 
   .retro-header-left {
     gap: var(--space-sm);
+    min-width: 0;
   }
 
   .retro-room-name {
+    max-width: 180px;
     font-size: 15px;
   }
 
@@ -368,13 +462,15 @@
     display: flex;
     justify-content: center;
     width: 100%;
-    padding-top: 4px;
+    padding-top: 8px;
     border-top: 1px solid var(--border-subtle);
     overflow-x: auto;
   }
 
   .retro-header-right {
     gap: 6px;
+    justify-content: flex-end;
+    flex-wrap: nowrap;
   }
 
   .stage-hint {
@@ -411,19 +507,24 @@
 }
 
 @media (max-width: 520px) {
+  .retro-room-name {
+    max-width: 120px;
+    font-size: 14px;
+  }
+
   .retro-header-right .btn-secondary,
   .retro-header-right .btn-primary {
-    padding: 8px 12px;
+    padding: 7px 10px;
     font-size: 13px;
   }
 
-  .retro-header-right .btn-secondary span,
-  .retro-header-right .btn-primary span.btn-text-mobile-hide {
+  #btn-share-link .btn-header-label,
+  #btn-next-stage .btn-header-label {
     display: none;
   }
 
   .votes-counter {
-    padding: 6px 10px;
+    padding: 4px 8px;
   }
 
   .votes-counter-text {

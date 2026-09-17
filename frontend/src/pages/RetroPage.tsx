@@ -735,7 +735,7 @@ export default function RetroPage() {
         <div className="retro-header-right">
           {/* Votes counter */}
           {room.stage === 'voting' && (
-            <div className="votes-counter">
+            <div className="votes-counter" title={`Осталось голосов: ${votesLeft} из ${MAX_VOTES}`}>
               <span className="votes-counter-dots">
                 {Array.from({ length: MAX_VOTES }).map((_, i) => (
                   <span
@@ -744,7 +744,10 @@ export default function RetroPage() {
                   />
                 ))}
               </span>
-              <span className="votes-counter-text">{votesLeft} из {MAX_VOTES} голосов</span>
+              <span className="votes-counter-text">
+                <span className="votes-counter-text-full">{votesLeft} из {MAX_VOTES} голосов</span>
+                <span className="votes-counter-text-short">{votesLeft}/{MAX_VOTES}</span>
+              </span>
             </div>
           )}
 
@@ -757,9 +760,10 @@ export default function RetroPage() {
               id="btn-share-link"
               className="btn-secondary"
               onClick={handleCopyLink}
+              data-tooltip={copied ? 'Скопировано!' : 'Скопировать ссылку'}
             >
               {copied ? <Check size={16} /> : <Copy size={16} />}
-              <span>{copied ? 'Скопировано!' : 'Ссылка'}</span>
+              <span className="btn-header-label">{copied ? 'Скопировано!' : 'Ссылка'}</span>
             </button>
           )}
 
@@ -782,8 +786,15 @@ export default function RetroPage() {
               id="btn-next-stage"
               className="btn-primary"
               onClick={handleNextStage}
+              data-tooltip={
+                currentStageIdx < STAGE_ORDER.length - 2
+                  ? 'Следующий этап'
+                  : currentStageIdx === STAGE_ORDER.length - 2
+                  ? 'Завершить ретроспективу'
+                  : 'Итоговый отчет'
+              }
             >
-              <span className="btn-text-mobile-hide">
+              <span className="btn-header-label">
                 {currentStageIdx < STAGE_ORDER.length - 2
                   ? 'Далее'
                   : currentStageIdx === STAGE_ORDER.length - 2
