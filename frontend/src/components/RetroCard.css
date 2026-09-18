@@ -313,19 +313,113 @@
   padding-top: var(--space-sm);
 }
 
+.card-action-items--empty-discussion {
+  margin-top: var(--space-sm);
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.4);
+  border: 1px dashed rgba(0, 0, 0, 0.2);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  transition: all var(--transition-fast);
+}
+
+.card-action-items--empty-discussion:hover {
+  background: rgba(255, 255, 255, 0.65);
+  border-color: rgba(0, 0, 0, 0.35);
+}
+
+.card-action-items-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
 .card-action-items-toggle {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   font-size: 11px;
   font-weight: 600;
   color: var(--note-text, #92400e);
-  opacity: 0.7;
-  width: 100%;
   cursor: pointer;
   background: none;
   border: none;
-  padding: 0;
+  padding: 2px 4px;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.card-action-items-toggle:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.card-tasks-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--note-text, #92400e);
+}
+
+.card-tasks-badge--empty {
+  opacity: 0.8;
+}
+
+.card-tasks-badge--has-items {
+  opacity: 0.95;
+}
+
+.card-tasks-icon {
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
+.card-add-task-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--note-text, #92400e);
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.card-add-task-btn:hover {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.12);
+  transform: translateY(-1px);
+}
+
+.card-add-task-btn:active {
+  transform: translateY(0);
+}
+
+.card-add-task-btn--active {
+  background: var(--note-text, #92400e);
+  color: var(--note-color, #fef3c7);
+  border-color: var(--note-text, #92400e);
+}
+
+.card-add-task-btn--active:hover {
+  background: var(--note-text, #92400e);
+  color: var(--note-color, #fef3c7);
+}
+
+.card-add-task-btn--compact {
+  padding: 2px 8px;
 }
 
 .action-items-list {

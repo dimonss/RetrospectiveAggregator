@@ -1,11 +1,20 @@
 import React, { useState } from 'react';
-import { ThumbsUp, Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { ThumbsUp, Plus, Trash2, ChevronDown, ChevronUp, CheckSquare } from 'lucide-react';
 import { type RetroCard, type Stage, MOCK_USERS } from '../mocks/data';
 import { useAuth } from '../context/AuthContext';
 import './RetroCard.css';
 
 const NOTE_COLORS = ['#fef3c7', '#fce7f3', '#dcfce7', '#dbeafe', '#ede9fe'];
 const NOTE_TEXT_COLORS = ['#92400e', '#9d174d', '#166534', '#1e3a8a', '#4c1d95'];
+
+function formatTasksCount(count: number): string {
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+  if (mod100 >= 11 && mod100 <= 19) return `${count} задач`;
+  if (mod10 === 1) return `${count} задача`;
+  if (mod10 >= 2 && mod10 <= 4) return `${count} задачи`;
+  return `${count} задач`;
+}
 
 interface Props {
   card: RetroCard;
@@ -61,6 +70,7 @@ export default function RetroCard({
       onAddActionItem(card.id, actionText.trim(), selectedAssignee);
       setActionText('');
       setShowActionForm(false);
+      setShowActions(true);
     }
   };
 
@@ -126,17 +136,6 @@ export default function RetroCard({
 
         {/* Actions */}
         <div className="card-actions">
-          {stage === 'discussion' && isFacilitator && (
-            <button
-              className="card-action-btn"
-              onClick={() => setShowActionForm(!showActionForm)}
-              disabled={isDeletingCard}
-              id={`btn-add-action-${card.id}`}
-              title="Добавить задачу"
-            >
-              <Plus size={14} />
-            </button>
-          )}
           {(isMine || isFacilitator) && (
             <button
               className="card-action-btn card-action-btn--danger"
@@ -152,15 +151,36 @@ export default function RetroCard({
       </div>
 
       {/* Action Items */}
-      {card.actionItems && card.actionItems.length > 0 && (
+      {card.actionItems && card.actionItems.length > 0 ? (
         <div className="card-action-items">
-          <button
-            className="card-action-items-toggle"
-            onClick={() => setShowActions(!showActions)}
-          >
-            <span>📋 {card.actionItems.length} задач</span>
-            {showActions ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-          </button>
+          <div className="card-action-items-header">
+            <button
+              type="button"
+              className="card-action-items-toggle"
+              onClick={() => setShowActions(!showActions)}
+            >
+              <span className="card-tasks-badge card-tasks-badge--has-items">
+                <CheckSquare size={13} className="card-tasks-icon" />
+                <span>{formatTasksCount(card.actionItems.length)}</span>
+              </span>
+              {showActions ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            </button>
+
+            {stage === 'discussion' && isFacilitator && (
+              <button
+                type="button"
+                className={`card-add-task-btn card-add-task-btn--compact ${showActionForm ? 'card-add-task-btn--active' : ''}`}
+                onClick={() => setShowActionForm(!showActionForm)}
+                disabled={isDeletingCard}
+                id={`btn-add-action-${card.id}`}
+                title={showActionForm ? 'Скрыть форму' : 'Добавить задачу к карточке'}
+              >
+                <Plus size={13} />
+                <span>Добавить</span>
+              </button>
+            )}
+          </div>
+
           {showActions && (
             <ul className="action-items-list">
               {card.actionItems.map((ai) => {
@@ -200,18 +220,49 @@ export default function RetroCard({
             </ul>
           )}
         </div>
+      ) : (
+        stage === 'discussion' && (
+          <div className="card-action-items card-action-items--empty-discussion">
+            <span className="card-tasks-badge card-tasks-badge--empty">
+              <CheckSquare size={13} className="card-tasks-icon" />
+              <span>0 задач</span>
+            </span>
+            {isFacilitator && (
+              <button
+                type="button"
+                className={`card-add-task-btn ${showActionForm ? 'card-add-task-btn--active' : ''}`}
+                onClick={() => setShowActionForm(!showActionForm)}
+                disabled={isDeletingCard}
+                id={`btn-add-action-${card.id}`}
+                title={showActionForm ? 'Скрыть форму' : 'Добавить задачу к карточке'}
+              >
+                <Plus size={13} />
+                <span>Добавить задачу</span>
+              </button>
+            )}
+          </div>
+        )
       )}
 
       {/* Add action form */}
       {showActionForm && (
         <div className="card-action-form">
           <textarea
-            placeholder="Что нужно сделать?"
+            placeholder="Что нужно сделать? (Ctrl+Enter для сохранения)"
             value={actionText}
             onChange={(e) => setActionText(e.target.value)}
+            onKeyDown={(e) => {
+              if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                submitAction();
+              } else if (e.key === 'Escape') {
+                setShowActionForm(false);
+              }
+            }}
             className="action-form-input"
             id={`action-text-${card.id}`}
             rows={2}
+            autoFocus
           />
           <div className="action-form-assignees">
             <span className="action-form-assignees-label">Исполнитель:</span>
