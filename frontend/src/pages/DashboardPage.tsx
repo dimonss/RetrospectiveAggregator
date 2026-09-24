@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Users, Clock, ChevronRight, LogOut, Zap, Loader2, Trash2, Pencil, Check, X } from 'lucide-react';
+import { Plus, Users, Clock, ChevronRight, LogOut, Zap, Loader2, Trash2, Pencil, Check, X, RefreshCw } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { type TemplateId } from '../mocks/data';
 import { getRoomsApi, getRoomStatsApi, deleteRoomApi, updateRoomNameApi, type RoomApiData, type RoomStatsApiData } from '../api/rooms';
@@ -46,7 +46,7 @@ interface PendingRoomDeletion {
 }
 
 export default function DashboardPage() {
-  const { user, logout } = useAuth();
+  const { user, logout, activeProvider, availableProviders, switchProvider } = useAuth();
   const navigate = useNavigate();
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [realRooms, setRealRooms] = useState<RoomApiData[]>([]);
@@ -210,7 +210,23 @@ export default function DashboardPage() {
               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
             />
             <span className="user-name">{user?.name}</span>
+            {activeProvider && (
+              <span style={{ fontSize: '0.75rem', opacity: 0.8 }} title={activeProvider === 'google' ? 'Google аккаунт' : 'Telegram аккаунт'}>
+                {activeProvider === 'google' ? '🔵' : '✈️'}
+              </span>
+            )}
           </div>
+          {availableProviders.length > 1 && (
+            <button
+              className="btn-icon tooltip-bottom"
+              onClick={() => switchProvider(activeProvider === 'google' ? 'telegram' : 'google')}
+              data-tooltip={activeProvider === 'google' ? 'Переключить на Telegram' : 'Переключить на Google'}
+              style={{ width: 'auto', padding: '0 8px', gap: '4px', display: 'flex', alignItems: 'center', fontSize: '0.75rem' }}
+            >
+              <RefreshCw size={13} />
+              <span>{activeProvider === 'google' ? 'TG' : 'G'}</span>
+            </button>
+          )}
           <ThemeToggle />
           <button
             id="btn-logout"

@@ -16,7 +16,7 @@ export default function LoginPage() {
     setError(null);
     try {
       const response = await loginWithGoogle(idToken);
-      login(authUserToUser(response.user));
+      login(authUserToUser(response.user), 'google');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ошибка авторизации Google');
     } finally {
@@ -29,7 +29,7 @@ export default function LoginPage() {
     setError(null);
     try {
       const response = await loginWithTelegram(user);
-      login(authUserToUser(response.user));
+      login(authUserToUser(response.user), 'telegram');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ошибка авторизации Telegram');
     } finally {
