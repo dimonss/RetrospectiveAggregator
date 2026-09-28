@@ -1,4 +1,5 @@
-import { apiRequest, setTokens, clearTokens, getTokens } from './client';
+import { apiRequest, setTokens, clearTokens, getTokens, type AuthProviderType } from './client';
+
 
 interface AuthUser {
     id: string;
@@ -68,17 +69,28 @@ export async function getMe(): Promise<UserProfile> {
     return profile;
 }
 
-export async function logoutApi(): Promise<void> {
-    const { refreshToken } = getTokens();
-    if (refreshToken) {
-        try {
-            await apiRequest('/auth/logout', {
-                method: 'POST',
-                body: JSON.stringify({ refreshToken }),
-            });
-        } catch {
-            // Ignore logout errors
+export async function logoutApi(target?: AuthProviderType | 'all'): Promise<void> {
+    if (target === 'all') {
+        const gRefresh = localStorage.getItem('google_refreshToken');
+        const tgRefresh = localStorage.getItem('telegram_refreshToken');
+        if (gRefresh) await apiRequest('/auth/logout', { method: 'POST', body: JSON.stringify({ refreshToken: gRefresh }) }).catch(() => {});
+        if (tgRefresh) await apiRequest('/auth/logout', { method: 'POST', body: JSON.stringify({ refreshToken: tgRefresh }) }).catch(() => {});
+    } else if (target) {
+        const refresh = localStorage.getItem(`${target}_refreshToken`);
+        if (refresh) await apiRequest('/auth/logout', { method: 'POST', body: JSON.stringify({ refreshToken: refresh }) }).catch(() => {});
+    } else {
+        const { refreshToken } = getTokens();
+        if (refreshToken) {
+            try {
+                await apiRequest('/auth/logout', {
+                    method: 'POST',
+                    body: JSON.stringify({ refreshToken }),
+                });
+            } catch {
+                // Ignore logout errors
+            }
         }
     }
-    clearTokens();
+    clearTokens(target);
 }
+

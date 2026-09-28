@@ -1,13 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Users, Clock, ChevronRight, LogOut, Zap, Loader2, Trash2, Pencil, Check, X, RefreshCw } from 'lucide-react';
+import { Plus, Users, Clock, ChevronRight, LogOut, Zap, Loader2, Trash2, Pencil, Check, X, RefreshCw, UserPlus } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { type TemplateId } from '../mocks/data';
 import { getRoomsApi, getRoomStatsApi, deleteRoomApi, updateRoomNameApi, type RoomApiData, type RoomStatsApiData } from '../api/rooms';
 
 import TemplateModal from '../components/TemplateModal';
+import { LogoutModal } from '../components/LogoutModal';
 import ThemeToggle from '../components/ThemeToggle';
 import UndoSnackbar from '../components/UndoSnackbar';
+
 import './DashboardPage.css';
 
 const STAGE_LABELS: Record<string, { label: string; color: string }> = {
@@ -46,9 +48,11 @@ interface PendingRoomDeletion {
 }
 
 export default function DashboardPage() {
-  const { user, logout, activeProvider, availableProviders, switchProvider } = useAuth();
+  const { user, activeProvider, availableProviders, switchProvider } = useAuth();
   const navigate = useNavigate();
   const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+
   const [realRooms, setRealRooms] = useState<RoomApiData[]>([]);
   const [realStats, setRealStats] = useState<RoomStatsApiData | null>(null);
   const [isLoadingRooms, setIsLoadingRooms] = useState(true);
@@ -216,7 +220,7 @@ export default function DashboardPage() {
               </span>
             )}
           </div>
-          {availableProviders.length > 1 && (
+          {availableProviders.length > 1 ? (
             <button
               className="btn-icon tooltip-bottom"
               onClick={() => switchProvider(activeProvider === 'google' ? 'telegram' : 'google')}
@@ -226,16 +230,27 @@ export default function DashboardPage() {
               <RefreshCw size={13} />
               <span>{activeProvider === 'google' ? 'TG' : 'G'}</span>
             </button>
+          ) : availableProviders.length === 1 && (
+            <button
+              className="btn-icon tooltip-bottom"
+              onClick={() => setIsLogoutModalOpen(true)}
+              data-tooltip={activeProvider === 'google' ? 'Войти через Telegram' : 'Войти через Google'}
+              style={{ width: 'auto', padding: '0 8px', gap: '4px', display: 'flex', alignItems: 'center', fontSize: '0.75rem' }}
+            >
+              <UserPlus size={13} />
+              <span>{activeProvider === 'google' ? '+ TG' : '+ G'}</span>
+            </button>
           )}
           <ThemeToggle />
           <button
             id="btn-logout"
             className="btn-icon tooltip-bottom"
-            onClick={logout}
+            onClick={() => setIsLogoutModalOpen(true)}
             data-tooltip="Выйти"
           >
             <LogOut size={18} />
           </button>
+
         </div>
       </header>
 
@@ -519,6 +534,12 @@ export default function DashboardPage() {
           durationMs={5000}
         />
       )}
+
+      <LogoutModal
+        isOpen={isLogoutModalOpen}
+        onClose={() => setIsLogoutModalOpen(false)}
+      />
     </div>
   );
 }
+

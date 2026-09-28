@@ -8,7 +8,7 @@ export interface AuthContextType {
   activeProvider: AuthProviderType | null;
   availableProviders: AuthProviderType[];
   login: (user: User, provider?: AuthProviderType) => void;
-  logout: () => void;
+  logout: (target?: AuthProviderType | 'all') => Promise<void>;
   switchProvider: (provider: AuthProviderType) => Promise<void>;
 }
 
@@ -17,7 +17,7 @@ export const AuthContext = createContext<AuthContextType>({
   activeProvider: null,
   availableProviders: [],
   login: () => {},
-  logout: () => {},
+  logout: async () => {},
   switchProvider: async () => {},
 });
 
@@ -43,13 +43,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setAvailableProviders(getAvailableProviders());
   }, []);
 
-  const handleLogout = useCallback(async () => {
+  const handleLogout = useCallback(async (target?: AuthProviderType | 'all') => {
     try {
-      await logoutApi();
+      await logoutApi(target);
     } catch (err) {
       console.error('Failed to log out:', err);
     } finally {
-      clearTokens();
+      clearTokens(target);
       const remaining = getActiveProvider();
       if (remaining) {
         setActiveProv(remaining);
@@ -67,6 +67,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
   }, []);
+
 
   const refreshUser = useCallback(async () => {
     const { accessToken, provider } = getTokens();

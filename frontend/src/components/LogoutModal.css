@@ -1,0 +1,150 @@
+.retro-logout-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1rem;
+}
+
+.retro-logout-modal-card {
+  width: 100%;
+  max-width: 480px;
+  background: var(--bg-card, #1e1e2e);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  border-radius: 20px;
+  padding: 1.5rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  color: var(--text-color, #e2e8f0);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.retro-logout-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.retro-logout-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.retro-logout-icon-box {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.retro-logout-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.retro-logout-subtitle {
+  font-size: 0.8rem;
+  color: var(--text-muted, #94a3b8);
+}
+
+.retro-sso-warning {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: #fbbf24;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.retro-sso-warning strong {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: #fef3c7;
+}
+
+.retro-logout-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.retro-logout-option-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.retro-logout-option-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.retro-logout-option-title {
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.retro-logout-option-sub {
+  font-size: 0.78rem;
+  color: var(--text-muted, #94a3b8);
+}
+
+.retro-add-provider-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 1rem;
+  border-radius: 14px;
+  background: rgba(124, 58, 237, 0.08);
+  border: 1px solid rgba(124, 58, 237, 0.25);
+}
+
+.retro-add-provider-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #c4b5fd;
+}
+
+.retro-add-provider-desc {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-muted, #94a3b8);
+  line-height: 1.4;
+}
+
+.retro-add-provider-widget {
+  display: flex;
+  justify-content: center;
+  padding-top: 0.4rem;
+}
+
+.retro-logout-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}

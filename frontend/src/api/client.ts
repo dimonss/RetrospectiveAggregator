@@ -62,19 +62,8 @@ export function setTokens(accessToken: string, refreshToken: string, provider?: 
     localStorage.setItem(APP_PROVIDER_KEY, targetProvider);
 }
 
-export function clearTokens(onlyCurrent: boolean = true) {
-    const current = getActiveProvider();
-    if (current && onlyCurrent) {
-        localStorage.removeItem(`${current}_accessToken`);
-        localStorage.removeItem(`${current}_refreshToken`);
-        localStorage.removeItem(`${current}_user`);
-        const remaining = getActiveProvider();
-        if (remaining) {
-            localStorage.setItem(APP_PROVIDER_KEY, remaining);
-        } else {
-            localStorage.removeItem(APP_PROVIDER_KEY);
-        }
-    } else {
+export function clearTokens(target?: AuthProviderType | 'all' | boolean) {
+    if (target === 'all' || target === false) {
         localStorage.removeItem('google_accessToken');
         localStorage.removeItem('google_refreshToken');
         localStorage.removeItem('google_user');
@@ -82,8 +71,23 @@ export function clearTokens(onlyCurrent: boolean = true) {
         localStorage.removeItem('telegram_refreshToken');
         localStorage.removeItem('telegram_user');
         localStorage.removeItem(APP_PROVIDER_KEY);
+        return;
+    }
+
+    const providerToRemove = (target === 'google' || target === 'telegram') ? target : getActiveProvider();
+    if (providerToRemove) {
+        localStorage.removeItem(`${providerToRemove}_accessToken`);
+        localStorage.removeItem(`${providerToRemove}_refreshToken`);
+        localStorage.removeItem(`${providerToRemove}_user`);
+        const remaining = getActiveProvider();
+        if (remaining) {
+            localStorage.setItem(APP_PROVIDER_KEY, remaining);
+        } else {
+            localStorage.removeItem(APP_PROVIDER_KEY);
+        }
     }
 }
+
 
 let refreshPromise: Promise<boolean> | null = null;
 type UnauthorizedHandler = () => void;
