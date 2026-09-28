@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, authUserToUser } from '../context/AuthContext';
 import { loginWithGoogle, loginWithTelegram } from '../api/auth';
@@ -110,7 +111,7 @@ export const LogoutModal: React.FC<LogoutModalProps> = ({ isOpen, onClose }) => 
     }
   };
 
-  return (
+  return createPortal(
     <div className="retro-logout-modal-overlay" onClick={onClose}>
       <div className="retro-logout-modal-card" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
@@ -250,6 +251,7 @@ export const LogoutModal: React.FC<LogoutModalProps> = ({ isOpen, onClose }) => 
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

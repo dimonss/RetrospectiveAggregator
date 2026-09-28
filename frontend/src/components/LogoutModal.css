@@ -13,6 +13,8 @@
 .retro-logout-modal-card {
   width: 100%;
   max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
   background: var(--bg-card, #1e1e2e);
   border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
   border-radius: 20px;
@@ -147,4 +149,25 @@
   gap: 0.75rem;
   padding-top: 0.5rem;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+@media (max-width: 500px) {
+  .retro-logout-modal-card {
+    padding: 1.1rem;
+    border-radius: 16px;
+  }
+
+  .retro-logout-option-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .retro-logout-option-row button {
+    width: 100%;
+  }
+
+  .retro-sso-warning {
+    padding: 0.75rem;
+  }
 }
