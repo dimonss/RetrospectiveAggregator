@@ -205,6 +205,7 @@
   font-weight: 500;
   margin-bottom: var(--space-sm);
   word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .card-author {
@@ -428,6 +429,8 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
+  width: 100%;
 }
 
 .action-item {
@@ -436,15 +439,29 @@
   gap: 6px;
   font-size: 12px;
   color: var(--note-text, #92400e);
+  min-width: 0;
+  width: 100%;
 }
 
 .action-item-check {
   flex-shrink: 0;
+  line-height: 1.4;
 }
 
 .action-item-text {
   flex: 1;
+  min-width: 0;
   line-height: 1.4;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.action-item-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 .action-item-assignee-tag {
@@ -458,6 +475,13 @@
   background: rgba(0,0,0,0.06);
   padding: 2px 6px;
   border-radius: 10px;
+  max-width: 120px;
+}
+
+.action-item-assignee-tag span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .action-item-assignee-avatar {
@@ -465,6 +489,7 @@
   height: 14px;
   border-radius: 50%;
   object-fit: cover;
+  flex-shrink: 0;
 }
 
 .action-item-delete-btn {
@@ -479,6 +504,7 @@
   justify-content: center;
   border-radius: 4px;
   transition: all var(--transition-fast);
+  flex-shrink: 0;
 }
 
 .action-item-delete-btn:hover {

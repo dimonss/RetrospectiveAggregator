@@ -190,30 +190,32 @@ export default function RetroCard({
                   <li key={ai.id} className="action-item">
                     <span className="action-item-check">☐</span>
                     <span className="action-item-text">{ai.text}</span>
-                    <div className="action-item-assignee-tag">
-                      {avatarUrl && (
-                        <img
-                          src={avatarUrl}
-                          alt={assignee?.name || 'Исполнитель'}
-                          className="action-item-assignee-avatar"
-                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                        />
+                    <div className="action-item-right">
+                      <div className="action-item-assignee-tag">
+                        {avatarUrl && (
+                          <img
+                            src={avatarUrl}
+                            alt={assignee?.name || 'Исполнитель'}
+                            className="action-item-assignee-avatar"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                          />
+                        )}
+                        <span>{assignee?.name?.split(' ')[0] || 'Не назначен'}</span>
+                      </div>
+                      {isFacilitator && onDeleteActionItem && (
+                        <button
+                          type="button"
+                          className="action-item-delete-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDeleteActionItem(ai.id);
+                          }}
+                          title="Удалить задачу"
+                        >
+                          <Trash2 size={12} />
+                        </button>
                       )}
-                      <span>{assignee?.name?.split(' ')[0] || 'Не назначен'}</span>
                     </div>
-                    {isFacilitator && onDeleteActionItem && (
-                      <button
-                        type="button"
-                        className="action-item-delete-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDeleteActionItem(ai.id);
-                        }}
-                        title="Удалить задачу"
-                      >
-                        <Trash2 size={12} />
-                      </button>
-                    )}
                   </li>
                 );
               })}
